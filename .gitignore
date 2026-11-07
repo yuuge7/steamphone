@@ -1,0 +1,27 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+.tools/
+artifacts/
+*.user
+*.keystore
+*.jks
+TestResults/
+*.db3*
+*.binlog
+
+# Local documentation (README is the only Markdown file published).
+*.md
+!README.md
+
+# Signing identity and machine-local credentials must never enter Git.
+signing.local.json
+*.p12
+*.pfx
+*.key
+*.pem
+*-signing-backup*
+.env
+.env.*
+!.env.example

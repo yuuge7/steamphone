@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Steamphone.ViewModels"
+             xmlns:core="clr-namespace:Steamphone.Core;assembly=Steamphone.Core"
+             x:Class="Steamphone.Views.StatsPage" x:DataType="vm:StatsViewModel" Title="Statistici">
+  <Grid Padding="20" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="18" MaximumWidthRequest="680" HorizontalOptions="Fill">
+    <VerticalStackLayout Spacing="6"><Label Text="Timpul tău de joc" Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" /><Label Text="Istoric păstrat pe acest telefon." Style="{StaticResource Subtitle}" /></VerticalStackLayout>
+    <Border Grid.Row="1" Style="{StaticResource Card}"><VerticalStackLayout Spacing="8"><Label Text="TOTAL ÎNREGISTRAT" Style="{StaticResource Eyebrow}" /><Label Text="{Binding TotalTime}" FontSize="28" FontFamily="sans-serif-condensed" FontAttributes="Bold" /><Label Text="Se actualizează din SQLite, inclusiv în timpul unei sesiuni active." Style="{StaticResource Subtitle}" FontSize="12" /></VerticalStackLayout></Border>
+    <VerticalStackLayout Grid.Row="2" Spacing="6"><Label Style="{StaticResource Error}" /><Button Text="Actualizează" Command="{Binding ReloadCommand}" Style="{StaticResource Secondary}" /></VerticalStackLayout>
+    <CollectionView Grid.Row="3" ItemsSource="{Binding Games}" SelectionMode="None">
+      <CollectionView.EmptyView><Label Text="Adaugă o mapare și deschide aplicația. Timpul de joc va apărea aici." Style="{StaticResource Subtitle}" Margin="12,24" /></CollectionView.EmptyView>
+      <CollectionView.ItemTemplate><DataTemplate x:DataType="core:GameTotal"><Border Style="{StaticResource Card}" Margin="0,0,0,12"><VerticalStackLayout Spacing="6"><Label Text="{Binding DisplayName}" FontSize="20" FontAttributes="Bold" /><Label Text="{Binding DurationLabel}" FontSize="18" TextColor="{AppThemeBinding Light=#176BA4, Dark=#66C0F4}" /><Label Text="{Binding AppIdLabel}" Style="{StaticResource Subtitle}" FontSize="12" /></VerticalStackLayout></Border></DataTemplate></CollectionView.ItemTemplate>
+    </CollectionView>
+  </Grid>
+</ContentPage>

@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <SteamphoneVersionMajor>1</SteamphoneVersionMajor>
+    <SteamphoneVersionMinor>0</SteamphoneVersionMinor>
+    <ApplicationDisplayVersion Condition="'$(ApplicationDisplayVersion)' == ''">$(SteamphoneVersionMajor).$(SteamphoneVersionMinor).0</ApplicationDisplayVersion>
+    <ApplicationVersion Condition="'$(ApplicationVersion)' == ''">1</ApplicationVersion>
+  </PropertyGroup>
+</Project>

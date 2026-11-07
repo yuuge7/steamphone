@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       x:Class="Steamphone.AppShell"
+       FlyoutBehavior="Disabled"
+       Shell.BackgroundColor="{AppThemeBinding Light=White, Dark=#15283D}"
+       Shell.ForegroundColor="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}"
+       Shell.TitleColor="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}"
+       Shell.TabBarBackgroundColor="{AppThemeBinding Light=White, Dark=#15283D}"
+       Shell.TabBarForegroundColor="{AppThemeBinding Light=#176BA4, Dark=#66C0F4}"
+       Shell.TabBarUnselectedColor="{AppThemeBinding Light=#52657A, Dark=#A9BBD0}">
+  <TabBar>
+    <ShellContent x:Name="HomeTab" Title="Acasă" Route="home" Icon="home.png" />
+    <ShellContent x:Name="MappingsTab" Title="Mapări" Route="mappings" Icon="mappings.png" />
+    <ShellContent x:Name="StatsTab" Title="Statistici" Route="stats" Icon="stats.png" />
+    <ShellContent x:Name="SettingsTab" Title="Setări" Route="settings" Icon="settings.png" />
+  </TabBar>
+</Shell>

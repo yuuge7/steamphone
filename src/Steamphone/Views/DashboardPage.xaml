@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Steamphone.ViewModels"
+             x:Class="Steamphone.Views.DashboardPage" x:DataType="vm:DashboardViewModel" Title="Steamphone">
+  <ScrollView>
+    <VerticalStackLayout Padding="20,20,20,32" Spacing="18" MaximumWidthRequest="620" HorizontalOptions="Fill">
+      <Label Text="PREZENȚA TA, DE PE TELEFON" Style="{StaticResource Eyebrow}" />
+      <Label Text="{Binding AccountName}" Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
+      <Border BackgroundColor="#15283D" Stroke="#35516A" StrokeShape="RoundRectangle 24" Padding="22">
+        <VerticalStackLayout Spacing="16">
+          <Grid ColumnDefinitions="12,*" ColumnSpacing="10">
+            <Ellipse Fill="#7F94A8" WidthRequest="9" HeightRequest="9" VerticalOptions="Start" Margin="0,5,0,0">
+              <Ellipse.Triggers><DataTrigger TargetType="Ellipse" Binding="{Binding IsConnected}" Value="True"><Setter Property="Fill" Value="#A4D66B" /></DataTrigger></Ellipse.Triggers>
+            </Ellipse>
+            <Label Grid.Column="1" Text="{Binding ConnectionMessage}" TextColor="#C5D8E9" FontSize="13" />
+          </Grid>
+          <Label Text="ACUM PE TELEFON" TextColor="#66C0F4" FontSize="11" CharacterSpacing="1.5" FontAttributes="Bold" />
+          <Label Text="{Binding CurrentGame}" TextColor="White" FontFamily="sans-serif-condensed" FontSize="30" FontAttributes="Bold" />
+          <Label Text="{Binding MonitorMessage}" TextColor="#B0C7DB" FontSize="14" />
+          <Button Text="Pornește monitorizarea" Command="{Binding StartCommand}" IsVisible="{Binding IsRunning, Converter={StaticResource Not}}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" BackgroundColor="#66C0F4" TextColor="#102438" />
+          <Button Text="Oprește monitorizarea" Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" BackgroundColor="#2C435B" TextColor="#D8EAF7" />
+          <Button Text="Conectează contul Steam" Command="{Binding SignInCommand}" IsVisible="{Binding IsConnected, Converter={StaticResource Not}}" BackgroundColor="#66C0F4" TextColor="#102438" />
+        </VerticalStackLayout>
+      </Border>
+      <Label Style="{StaticResource Error}" />
+      <Border Style="{StaticResource Card}">
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Când nu rulezi un joc" FontSize="18" FontAttributes="Bold" />
+          <Label Text="Statusul la care revii după închiderea aplicației." Style="{StaticResource Subtitle}" />
+          <Picker Title="Status Steam" ItemsSource="{Binding Statuses}" SelectedItem="{Binding SelectedStatus}" SemanticProperties.Description="Status Steam implicit" />
+          <Label Text="Într-un joc mapat apari Online. Statusul ales se aplică atunci când revii în afara jocului." Style="{StaticResource Subtitle}" FontSize="12" />
+        </VerticalStackLayout>
+      </Border>
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+        <Border Style="{StaticResource Card}"><VerticalStackLayout Spacing="6"><Label Text="{Binding MappingCount}" FontSize="30" FontAttributes="Bold" /><Label Text="aplicații mapate" Style="{StaticResource Subtitle}" /></VerticalStackLayout></Border>
+        <Border Grid.Column="1" Style="{StaticResource Card}"><VerticalStackLayout Spacing="6"><Label Text="{Binding TotalTime}" FontSize="19" FontAttributes="Bold" /><Label Text="înregistrate local" Style="{StaticResource Subtitle}" /></VerticalStackLayout></Border>
+      </Grid>
+      <Button Text="Asociază o aplicație cu un joc Steam" Command="{Binding AddMappingCommand}" Style="{StaticResource Secondary}" />
+      <Label Text="La prima utilizare, acordă accesul la utilizarea aplicațiilor din fila Setări." Style="{StaticResource Subtitle}" />
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

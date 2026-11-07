@@ -1,0 +1,12 @@
+{
+  "format": "steamphone-backup",
+  "version": 1,
+  "exportedAtUtc": "2026-11-07T00:00:00+00:00",
+  "settings": {
+    "defaultStatus": "Online",
+    "theme": "System",
+    "pollSeconds": 2
+  },
+  "mappings": [],
+  "sessions": []
+}

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Steamphone.ViewModels"
+             xmlns:core="clr-namespace:Steamphone.Core;assembly=Steamphone.Core"
+             x:Class="Steamphone.Views.MappingsPage" x:DataType="vm:MappingsViewModel" Title="Mapări">
+  <Grid Padding="20" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="16" MaximumWidthRequest="680" HorizontalOptions="Fill">
+    <VerticalStackLayout Spacing="6">
+      <Label Text="Aplicație → joc Steam" Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
+      <Label Text="Tu alegi ce joc apare când deschizi fiecare aplicație." Style="{StaticResource Subtitle}" />
+    </VerticalStackLayout>
+    <Button Grid.Row="1" Text="Adaugă o mapare" Command="{Binding AddCommand}" />
+    <VerticalStackLayout Grid.Row="2"><Label Style="{StaticResource Error}" /><ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" /></VerticalStackLayout>
+    <CollectionView Grid.Row="3" ItemsSource="{Binding Mappings}" SelectionMode="None">
+      <CollectionView.EmptyView><VerticalStackLayout Padding="12,32" Spacing="12"><Label Text="Prima legătură începe aici" FontSize="23" FontAttributes="Bold" /><Label Text="Adaugă o mapare, selectează aplicația instalată și introdu AppID-ul jocului Steam." Style="{StaticResource Subtitle}" /></VerticalStackLayout></CollectionView.EmptyView>
+      <CollectionView.ItemTemplate>
+        <DataTemplate x:DataType="core:AppMapping">
+          <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+            <VerticalStackLayout Spacing="8">
+              <Label Text="{Binding DisplayName}" FontSize="20" FontAttributes="Bold" />
+              <Label Text="{Binding AppIdLabel}" Style="{StaticResource Subtitle}" />
+              <Label Text="Mapare dezactivată" TextColor="{AppThemeBinding Light=#946000, Dark=#E9C477}" IsVisible="{Binding Enabled, Converter={StaticResource Not}}" />
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button Text="Editează" Style="{StaticResource Secondary}" Command="{Binding EditCommand, Source={RelativeSource AncestorType={x:Type vm:MappingsViewModel}}, x:DataType=vm:MappingsViewModel}" CommandParameter="{Binding .}" />
+                <Button Grid.Column="1" Text="Șterge" Style="{StaticResource Secondary}" Command="{Binding DeleteCommand, Source={RelativeSource AncestorType={x:Type vm:MappingsViewModel}}, x:DataType=vm:MappingsViewModel}" CommandParameter="{Binding .}" />
+              </Grid>
+            </VerticalStackLayout>
+          </Border>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+    </CollectionView>
+  </Grid>
+</ContentPage>

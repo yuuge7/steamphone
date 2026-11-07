@@ -1,0 +1,149 @@
+name: Android releases
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One OS and one shell throughout. No Bash/PowerShell path or quoting mix.
+# No concurrency group: GitHub would cancel intermediate queued pushes.
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  build:
+    name: Test and build Android
+    runs-on: windows-2025
+    timeout-minutes: 60
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      publish: ${{ steps.plan.outputs.publish }}
+      commit: ${{ steps.plan.outputs.commit }}
+      artifact: android-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Allocate a unique app version
+        id: plan
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const release = require('./scripts/release.cjs');
+            release.planFromActions({ context, core });
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - name: Install Android workload
+        run: |
+          dotnet workload install maui-android --skip-manifest-update
+          if ($LASTEXITCODE -ne 0) { throw 'Android workload installation failed.' }
+
+      - name: Install the exact Android SDK dependencies
+        run: |
+          if (!$env:ANDROID_HOME -or !$env:JAVA_HOME) { throw 'The runner must provide ANDROID_HOME and JAVA_HOME.' }
+          dotnet build src/Steamphone/Steamphone.csproj -t:InstallAndroidDependencies -f net10.0-android "-p:AndroidSdkDirectory=$env:ANDROID_HOME" "-p:JavaSdkDirectory=$env:JAVA_HOME" -p:AcceptAndroidSDKLicenses=True --nologo
+          if ($LASTEXITCODE -ne 0) { throw 'Android SDK dependency installation failed.' }
+
+      - name: Test release logic
+        run: node --test scripts/release.test.cjs scripts/signing.test.cjs
+
+      - name: Test application core and backup format
+        run: dotnet test tests/Steamphone.Core.Tests/Steamphone.Core.Tests.csproj -c Release --nologo
+
+      - name: Restore the permanent signing identity
+        if: steps.plan.outputs.publish == 'true'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: node scripts/signing.cjs restore-ci
+
+      - name: Build and verify both APKs
+        env:
+          RELEASE_VERSION: ${{ steps.plan.outputs.version }}
+          RELEASE_CODE: ${{ steps.plan.outputs.versionCode }}
+          SOURCE_COMMIT: ${{ steps.plan.outputs.commit }}
+          SHOULD_PUBLISH: ${{ steps.plan.outputs.publish }}
+          ANDROID_SIGNING_KEYSTORE: ${{ runner.temp }}/steamphone-release.keystore
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          $arguments = @{
+            Runtime = @('android-arm64', 'android-x64')
+            Version = $env:RELEASE_VERSION
+            VersionCode = [int]$env:RELEASE_CODE
+            CommitSha = $env:SOURCE_COMMIT
+            AndroidSdk = $env:ANDROID_HOME
+            JavaSdk = $env:JAVA_HOME
+            SkipTests = $true
+          }
+          if ($env:SHOULD_PUBLISH -ne 'true') { $arguments.DevelopmentSigning = $true }
+          ./scripts/build-android.ps1 @arguments
+
+      - name: Include the release plan
+        env:
+          RELEASE_VERSION: ${{ steps.plan.outputs.version }}
+        run: Copy-Item -LiteralPath artifacts/release-plan.json -Destination "artifacts/release/$env:RELEASE_VERSION/release-plan.json"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: android-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/release/${{ steps.plan.outputs.version }}/*
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Remove the runner's private keystore
+        if: always()
+        run: |
+          $temporaryKey = Join-Path $env:RUNNER_TEMP 'steamphone-release.keystore'
+          if (Test-Path -LiteralPath $temporaryKey) { Remove-Item -LiteralPath $temporaryKey -Force }
+
+  publish:
+    name: Publish versioned release with commit changelog
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    runs-on: windows-2025
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+          path: artifacts/publish
+
+      - name: Publish a new release
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('node:fs');
+            const release = require('./scripts/release.cjs');
+            const plan = JSON.parse(fs.readFileSync('artifacts/publish/release-plan.json', 'utf8'));
+            await release.publish({ github, context, core, plan, directory: 'artifacts/publish' });

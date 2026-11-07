@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Steamphone.ViewModels"
+             x:Class="Steamphone.Views.LoginPage" x:DataType="vm:LoginViewModel"
+             NavigationPage.HasNavigationBar="False" Title="Conectare">
+  <ScrollView>
+    <VerticalStackLayout Padding="24,40,24,32" Spacing="22" MaximumWidthRequest="540" HorizontalOptions="Fill">
+      <Label Text="STEAMPHONE" Style="{StaticResource Eyebrow}" />
+      <VerticalStackLayout Spacing="8">
+        <Label Text="Telefonul tău.&#10;Prezent pe Steam." Style="{StaticResource Title}" FontSize="40" SemanticProperties.HeadingLevel="Level1" />
+        <Label Text="Deschizi un joc pe Android. Prietenii îl văd pe Steam." Style="{StaticResource Subtitle}" />
+      </VerticalStackLayout>
+      <Border Style="{StaticResource Card}">
+        <VerticalStackLayout Spacing="10">
+          <Label Text="Conectează contul Steam" FontSize="20" FontAttributes="Bold" />
+          <Label Text="Nume de cont" Style="{StaticResource Subtitle}" />
+          <Entry Text="{Binding Username}" Placeholder="Numele folosit la autentificare" ReturnType="Next" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" SemanticProperties.Description="Nume de cont Steam" />
+          <Label Text="Parolă" Style="{StaticResource Subtitle}" />
+          <Entry Text="{Binding Password}" Placeholder="Parola Steam" IsPassword="True" ReturnType="Go" ReturnCommand="{Binding LoginCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" SemanticProperties.Description="Parola Steam" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <Label Text="Prefer codul Steam Guard" Style="{StaticResource Subtitle}" VerticalOptions="Center" />
+            <Switch Grid.Column="1" IsToggled="{Binding PreferGuardCode}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" SemanticProperties.Description="Folosește codul Steam Guard în loc de aprobare pe telefon" />
+          </Grid>
+          <Label Text="{Binding ConnectionMessage}" Style="{StaticResource Subtitle}" />
+          <Label Style="{StaticResource Error}" />
+          <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+          <Button Text="Conectează Steam" Command="{Binding LoginCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+          <Button Text="Continuă sesiunea salvată" Command="{Binding ResumeCommand}" Style="{StaticResource Secondary}" IsVisible="{Binding HasSavedAccount}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+          <Button Text="Anulează conectarea" Command="{Binding CancelCommand}" Style="{StaticResource Secondary}" IsVisible="{Binding IsBusy}" />
+        </VerticalStackLayout>
+      </Border>
+      <Border Style="{StaticResource Card}" IsVisible="{Binding HasGuardChallenge}">
+        <VerticalStackLayout Spacing="12">
+          <Label Text="Steam Guard" FontSize="20" FontAttributes="Bold" />
+          <Label Text="{Binding GuardMessage}" />
+          <Entry Text="{Binding GuardCode}" Placeholder="Cod Steam Guard" IsVisible="{Binding NeedsCode}" MaxLength="10" ReturnType="Go" ReturnCommand="{Binding SubmitGuardCommand}" SemanticProperties.Description="Cod Steam Guard" />
+          <Button Text="Verifică codul" Command="{Binding SubmitGuardCommand}" IsVisible="{Binding NeedsCode}" />
+        </VerticalStackLayout>
+      </Border>
+      <Button Text="Configurează aplicațiile mai întâi" Command="{Binding ConfigureCommand}" Style="{StaticResource Secondary}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+      <Label Text="Parola nu se salvează. Sesiunea este protejată cu Android Keystore. Steamphone este un proiect independent, fără afiliere cu Valve." Style="{StaticResource Subtitle}" FontSize="12" />
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>
