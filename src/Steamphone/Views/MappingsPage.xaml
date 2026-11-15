@@ -7,7 +7,7 @@
   <Grid Padding="20" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="16" MaximumWidthRequest="680" HorizontalOptions="Fill">
     <VerticalStackLayout Spacing="6">
       <Label Text="Aplicație → joc Steam" Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
-      <Label Text="Tu alegi ce joc apare când deschizi fiecare aplicație." Style="{StaticResource Subtitle}" />
+      <Label Text="Asociază aplicațiile de pe telefon. Modul din Acasă decide dacă jocul este anunțat pe Steam." Style="{StaticResource Subtitle}" />
     </VerticalStackLayout>
     <Button Grid.Row="1" Text="Adaugă o mapare" Command="{Binding AddCommand}" />
     <VerticalStackLayout Grid.Row="2"><Label Style="{StaticResource Error}" /><ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" /></VerticalStackLayout>

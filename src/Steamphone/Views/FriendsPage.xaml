@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Steamphone.ViewModels"
+             xmlns:core="clr-namespace:Steamphone.Core;assembly=Steamphone.Core"
+             x:Class="Steamphone.Views.FriendsPage" x:DataType="vm:FriendsViewModel" Title="Prieteni">
+  <Grid Padding="20,0" MaximumWidthRequest="680" HorizontalOptions="Fill">
+    <CollectionView ItemsSource="{Binding Friends}" SelectionMode="None">
+      <CollectionView.Header>
+        <VerticalStackLayout Spacing="12" Padding="0,12,0,12">
+          <VerticalStackLayout Spacing="5">
+            <Label Text="STEAM HUB" Style="{StaticResource Eyebrow}" />
+            <Label Text="Intră în gașcă." Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
+            <Label Text="{Binding Summary}" Style="{StaticResource Subtitle}" />
+          </VerticalStackLayout>
+          <VerticalStackLayout Spacing="8">
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+              <Button Text="Magazin ↗" Command="{Binding OpenStoreCommand}" Style="{StaticResource Secondary}" Padding="8,10" FontSize="12" />
+              <Button Grid.Column="1" Text="Jocurile mele ↗" Command="{Binding OpenLibraryCommand}" Style="{StaticResource Secondary}" Padding="8,10" FontSize="12" />
+              <Button Grid.Column="2" Text="Profilul meu ↗" Command="{Binding OpenProfileCommand}" Style="{StaticResource Secondary}" Padding="8,10" FontSize="12" />
+            </Grid>
+            <Label Text="{Binding ConnectionMessage}" Style="{StaticResource Subtitle}" FontSize="12" />
+            <Button Text="Conectează hub-ul Steam" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+            <Button Text="Schimbă modul din Acasă" Command="{Binding GoHomeCommand}" IsVisible="{Binding IsLocalOnly}" Style="{StaticResource Secondary}" />
+            <Label Style="{StaticResource Error}" />
+          </VerticalStackLayout>
+          <SearchBar Placeholder="Caută un prieten sau un joc" Text="{Binding Search}" SemanticProperties.Description="Caută prieteni după nume sau joc" />
+          <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+            <Button Text="Toți" Command="{Binding SelectFilterCommand}" CommandParameter="Toți" Style="{StaticResource Secondary}" Padding="8,10">
+              <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding Filter}" Value="Toți"><Setter Property="BackgroundColor" Value="#28658D" /><Setter Property="TextColor" Value="White" /></DataTrigger></Button.Triggers>
+            </Button>
+            <Button Grid.Column="1" Text="În joc" Command="{Binding SelectFilterCommand}" CommandParameter="În joc" Style="{StaticResource Secondary}" Padding="8,10">
+              <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding Filter}" Value="În joc"><Setter Property="BackgroundColor" Value="#28658D" /><Setter Property="TextColor" Value="White" /></DataTrigger></Button.Triggers>
+            </Button>
+            <Button Grid.Column="2" Text="Online" Command="{Binding SelectFilterCommand}" CommandParameter="Online" Style="{StaticResource Secondary}" Padding="8,10">
+              <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding Filter}" Value="Online"><Setter Property="BackgroundColor" Value="#28658D" /><Setter Property="TextColor" Value="White" /></DataTrigger></Button.Triggers>
+            </Button>
+          </Grid>
+        </VerticalStackLayout>
+      </CollectionView.Header>
+      <CollectionView.Footer>
+        <VerticalStackLayout Padding="12,24,12,32" Spacing="10" IsVisible="{Binding HasFriends, Converter={StaticResource Not}}">
+          <ActivityIndicator IsVisible="{Binding IsWaiting}" IsRunning="{Binding IsWaiting}" />
+          <Label Text="{Binding EmptyTitle}" FontSize="23" FontFamily="sans-serif-condensed" FontAttributes="Bold" />
+          <Label Text="{Binding EmptyMessage}" Style="{StaticResource Subtitle}" />
+          <Label Text="Statusuri live prin Steam. Fără descărcări de avatare sau actualizări web automate." Style="{StaticResource Subtitle}" FontSize="11" Margin="0,16,0,0" />
+        </VerticalStackLayout>
+      </CollectionView.Footer>
+      <CollectionView.ItemTemplate>
+        <DataTemplate x:DataType="core:SteamFriend">
+          <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=White, Dark=#15253A}" StrokeShape="RoundRectangle 14" Padding="14" Margin="0,0,0,8">
+            <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding OpenFriendCommand, Source={RelativeSource AncestorType={x:Type vm:FriendsViewModel}}, x:DataType=vm:FriendsViewModel}" CommandParameter="{Binding .}" /></Border.GestureRecognizers>
+            <Grid ColumnDefinitions="48,*,48" ColumnSpacing="12" MinimumHeightRequest="48">
+              <Border Stroke="#405572" StrokeShape="RoundRectangle 12" BackgroundColor="{AppThemeBinding Light=#E6EFF7, Dark=#20344D}" HeightRequest="46" WidthRequest="46" Padding="0">
+                <Label Text="{Binding Initial}" HorizontalOptions="Center" VerticalOptions="Center" FontSize="22" FontAttributes="Bold" />
+              </Border>
+              <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" LineBreakMode="TailTruncation" MaxLines="1" />
+                <Label Text="{Binding Activity}" FontSize="12" LineBreakMode="TailTruncation" MaxLines="2" TextColor="{AppThemeBinding Light=#52657A, Dark=#A9BBD0}">
+                  <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding IsOnline}" Value="True"><Setter Property="TextColor" Value="{AppThemeBinding Light=#176BA4, Dark=#8EDFF4}" /></DataTrigger>
+                    <DataTrigger TargetType="Label" Binding="{Binding IsPlaying}" Value="True"><Setter Property="TextColor" Value="{AppThemeBinding Light=#307351, Dark=#94E4BD}" /></DataTrigger>
+                  </Label.Triggers>
+                </Label>
+              </VerticalStackLayout>
+              <Button Grid.Column="2" Text="›" Padding="0" MinimumWidthRequest="48" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#176BA4, Dark=#8EDFF4}" Command="{Binding OpenFriendCommand, Source={RelativeSource AncestorType={x:Type vm:FriendsViewModel}}, x:DataType=vm:FriendsViewModel}" CommandParameter="{Binding .}" SemanticProperties.Description="Vezi profilul sau jocul prietenului" />
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+    </CollectionView>
+  </Grid>
+</ContentPage>

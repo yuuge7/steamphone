@@ -5,7 +5,10 @@
   "settings": {
     "defaultStatus": "Online",
     "theme": "System",
-    "pollSeconds": 2
+    "pollSeconds": 2,
+    "visibility": "Public",
+    "keepConnectionWhenLocked": false,
+    "announceGameWhileInvisible": false
   },
   "mappings": [],
   "sessions": []

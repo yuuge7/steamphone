@@ -23,7 +23,8 @@ public static class MauiProgram
                 identity = Guid.NewGuid().ToString("N");
                 Preferences.Default.Set("steam.installation.id", identity);
             }
-            return new SteamConnection(sp.GetRequiredService<ICredentialStore>(), sp.GetRequiredService<SteamGuardBroker>(), identity);
+            return new SteamConnection(sp.GetRequiredService<ICredentialStore>(), sp.GetRequiredService<SteamGuardBroker>(), identity,
+                sp.GetRequiredService<AppDatabase>().GetSettingsAsync);
         });
         builder.Services.AddSingleton<PlaytimeTracker>();
         builder.Services.AddSingleton<MonitorState>();
@@ -34,12 +35,14 @@ public static class MauiProgram
         builder.Services.AddSingleton<AppNavigator>();
         builder.Services.AddSingleton<LoginViewModel>();
         builder.Services.AddSingleton<DashboardViewModel>();
+        builder.Services.AddTransient<FriendsViewModel>();
         builder.Services.AddSingleton<MappingsViewModel>();
         builder.Services.AddSingleton<StatsViewModel>();
         builder.Services.AddSingleton<SettingsViewModel>();
         builder.Services.AddTransient<MappingEditorViewModel>();
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<DashboardPage>();
+        builder.Services.AddTransient<FriendsPage>();
         builder.Services.AddTransient<MappingsPage>();
         builder.Services.AddTransient<StatsPage>();
         builder.Services.AddTransient<SettingsPage>();

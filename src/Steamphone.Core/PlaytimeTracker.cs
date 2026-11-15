@@ -8,6 +8,7 @@ public sealed class PlaytimeTracker(AppDatabase database, TimeProvider? clock = 
     private readonly SemaphoreSlim gate = new(1, 1);
     private PlaytimeStats? session;
     private long observedAt;
+    private long checkpointAt;
     public string? CurrentName => session?.DisplayName;
 
     public async Task ObserveAsync(AppMapping? mapping)
@@ -27,7 +28,12 @@ public sealed class PlaytimeTracker(AppDatabase database, TimeProvider? clock = 
                     DurationTicks = session.DurationTicks + (elapsed <= maximumGap ? Math.Max(0, elapsed.Ticks) : 0),
                     IsOpen = mapping is { Enabled: true } && session.PackageName == mapping.PackageName && session.SteamAppId == mapping.SteamAppId
                 };
-                await database.SaveSessionAsync(checkpoint);
+                // Accumulate in memory; checkpoint every ten seconds or at any transition.
+                if (!checkpoint.IsOpen || time.GetElapsedTime(checkpointAt, now) >= TimeSpan.FromSeconds(10))
+                {
+                    await database.SaveSessionAsync(checkpoint);
+                    checkpointAt = now;
+                }
                 session = checkpoint.IsOpen ? checkpoint : null;
             }
             if (session is null && mapping is { Enabled: true })
@@ -39,6 +45,7 @@ public sealed class PlaytimeTracker(AppDatabase database, TimeProvider? clock = 
                     LastObservedUtcTicks = time.GetUtcNow().UtcTicks, IsOpen = true
                 };
                 await database.SaveSessionAsync(session);
+                checkpointAt = now;
             }
             observedAt = now;
         }
@@ -46,4 +53,11 @@ public sealed class PlaytimeTracker(AppDatabase database, TimeProvider? clock = 
     }
 
     public Task StopAsync() => ObserveAsync(null);
+
+    public async Task FlushAsync()
+    {
+        await gate.WaitAsync();
+        try { if (session is not null) await database.SaveSessionAsync(session); }
+        finally { gate.Release(); }
+    }
 }

@@ -14,7 +14,8 @@ public sealed class BackupFile
     [JsonRequired] public List<BackupSession> Sessions { get; set; } = [];
 }
 
-public sealed record BackupSettings(BaseStatus DefaultStatus = BaseStatus.Online, string Theme = "System", int PollSeconds = 2);
+public sealed record BackupSettings(BaseStatus DefaultStatus = BaseStatus.Online, string Theme = "System", int PollSeconds = 2,
+    VisibilityMode Visibility = VisibilityMode.Public, bool KeepConnectionWhenLocked = false, bool AnnounceGameWhileInvisible = false);
 public sealed record BackupMapping(string PackageName, string DisplayName, long SteamAppId, bool Enabled);
 public sealed record BackupSession(string SessionId, string PackageName, string DisplayName, long SteamAppId,
     long StartedUtcTicks, long LastObservedUtcTicks, long DurationTicks);
@@ -68,7 +69,7 @@ public static partial class BackupCodec
     {
         if (backup.Format != "steamphone-backup" || backup.Version != 1)
             throw new InvalidDataException("Format sau versiune de backup incompatibilă.");
-        if (backup.Settings is null || !Enum.IsDefined(backup.Settings.DefaultStatus) ||
+        if (backup.Settings is null || !Enum.IsDefined(backup.Settings.DefaultStatus) || !Enum.IsDefined(backup.Settings.Visibility) ||
             backup.Settings.Theme is not ("System" or "Light" or "Dark") ||
             backup.Settings.PollSeconds is not (1 or 2 or 3 or 5 or 10))
             throw new InvalidDataException("Preferințele din fișier sunt invalide.");

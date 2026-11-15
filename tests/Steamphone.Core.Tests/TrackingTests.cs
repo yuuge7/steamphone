@@ -125,6 +125,63 @@ public sealed class TrackingTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CheckpointsAreBatchedButStoppingPreservesAllObservedTime()
+    {
+        var tracker = new PlaytimeTracker(database, clock);
+        await tracker.ObserveAsync(Mapping("game"));
+        for (var i = 0; i < 4; i++)
+        {
+            clock.Advance(TimeSpan.FromSeconds(2));
+            await tracker.ObserveAsync(Mapping("game"));
+        }
+        Assert.Equal(0, Assert.Single((await database.ExportAsync()).Sessions).DurationTicks);
+        await tracker.FlushAsync();
+        Assert.Equal(TimeSpan.FromSeconds(8).Ticks, Assert.Single((await database.ExportAsync()).Sessions).DurationTicks);
+        clock.Advance(TimeSpan.FromSeconds(2));
+        await tracker.ObserveAsync(Mapping("game"));
+        Assert.Equal(TimeSpan.FromSeconds(10).Ticks, Assert.Single((await database.ExportAsync()).Sessions).DurationTicks);
+        clock.Advance(TimeSpan.FromSeconds(2));
+        await tracker.StopAsync();
+        Assert.Equal(TimeSpan.FromSeconds(12).Ticks, Assert.Single(await database.GetTotalsAsync()).DurationTicks);
+    }
+
+    [Fact]
+    public async Task ConcurrentPreferenceUpdatesPreservePrivacyAndPrivacySurvivesReopenAndBackup()
+    {
+        await Task.WhenAll(database.UpdateSettingsAsync(x => x.Visibility = VisibilityMode.Invisible),
+            database.UpdateSettingsAsync(x => { x.Theme = "Dark"; x.KeepConnectionWhenLocked = true; }));
+        Assert.Equal(VisibilityMode.Invisible, (await database.GetSettingsAsync()).Visibility);
+        Assert.Equal("Dark", (await database.GetSettingsAsync()).Theme);
+        var backup = await database.ExportAsync();
+        await database.CloseAsync();
+        database = new AppDatabase(Path.Combine(directory, "test.db3"));
+        Assert.Equal(VisibilityMode.Invisible, (await database.GetSettingsAsync()).Visibility);
+        await database.UpdateSettingsAsync(x => x.Visibility = VisibilityMode.Public);
+        await database.ImportAsync(backup);
+        Assert.Equal(VisibilityMode.Invisible, (await database.GetSettingsAsync()).Visibility);
+        Assert.True((await database.GetSettingsAsync()).KeepConnectionWhenLocked);
+    }
+
+    [Fact]
+    public async Task ExistingDatabaseGainsPrivacyColumnsWithoutLosingSettingsOrMappings()
+    {
+        await database.CloseAsync();
+        var path = Path.Combine(directory, "legacy.db3");
+        using (var legacy = new SQLite.SQLiteConnection(path))
+        {
+            legacy.Execute("CREATE TABLE Settings (Id INTEGER PRIMARY KEY, DefaultStatus INTEGER, Theme TEXT, PollSeconds INTEGER)");
+            legacy.Execute("INSERT INTO Settings VALUES (1, 2, 'Dark', 5)");
+        }
+        database = new AppDatabase(path);
+        var settings = await database.GetSettingsAsync();
+        Assert.Equal(BaseStatus.Busy, settings.DefaultStatus);
+        Assert.Equal("Dark", settings.Theme);
+        Assert.Equal(5, settings.PollSeconds);
+        Assert.Equal(VisibilityMode.Public, settings.Visibility);
+        Assert.False(settings.KeepConnectionWhenLocked);
+    }
+
+    [Fact]
     public async Task SettingsSurviveReopenAndPollingIsBounded()
     {
         await database.SaveSettingsAsync(new AppSettings { DefaultStatus = BaseStatus.Busy, PollSeconds = 500, Theme = "Dark" });

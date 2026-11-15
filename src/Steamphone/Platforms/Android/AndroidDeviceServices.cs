@@ -16,6 +16,29 @@ public sealed class AndroidDeviceServices : IDeviceServices
     private readonly Context context = Application.Context;
     private readonly ForegroundState foreground = new();
     private long cursor;
+    private readonly ScreenReceiver screenReceiver;
+
+    public AndroidDeviceServices()
+    {
+        screenReceiver = new ScreenReceiver(() => EnvironmentChanged?.Invoke());
+        var filter = new IntentFilter();
+        filter.AddAction(Intent.ActionScreenOn);
+        filter.AddAction(Intent.ActionScreenOff);
+        filter.AddAction(Intent.ActionUserPresent);
+        if (OperatingSystem.IsAndroidVersionAtLeast(33)) context.RegisterReceiver(screenReceiver, filter, ReceiverFlags.NotExported);
+        else context.RegisterReceiver(screenReceiver, filter);
+        Connectivity.Current.ConnectivityChanged += (_, _) => EnvironmentChanged?.Invoke();
+    }
+
+    public event Action? EnvironmentChanged;
+    public bool HasInternet => Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
+    public bool IsInteractive => ((PowerManager)context.GetSystemService(Context.PowerService)!).IsInteractive &&
+        !((KeyguardManager)context.GetSystemService(Context.KeyguardService)!).IsKeyguardLocked;
+
+    private sealed class ScreenReceiver(Action changed) : BroadcastReceiver
+    {
+        public override void OnReceive(Context? context, Intent? intent) => changed();
+    }
 
     public bool HasUsageAccess
     {

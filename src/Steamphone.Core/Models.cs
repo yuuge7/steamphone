@@ -3,6 +3,7 @@ using SQLite;
 namespace Steamphone.Core;
 
 public enum BaseStatus { Online, Away, Busy, Snooze, Offline }
+public enum VisibilityMode { Public, Invisible, OnlineOnly, LocalOnly }
 
 [Table("Mappings")]
 public sealed class AppMapping
@@ -34,6 +35,9 @@ public sealed class AppSettings
     public BaseStatus DefaultStatus { get; set; } = BaseStatus.Online;
     public string Theme { get; set; } = "System";
     public int PollSeconds { get; set; } = 2;
+    public VisibilityMode Visibility { get; set; } = VisibilityMode.Public;
+    public bool KeepConnectionWhenLocked { get; set; }
+    public bool AnnounceGameWhileInvisible { get; set; }
 }
 
 public sealed record GameTotal(string PackageName, string DisplayName, long SteamAppId, long DurationTicks)

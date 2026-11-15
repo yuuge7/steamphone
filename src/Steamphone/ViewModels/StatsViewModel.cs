@@ -5,12 +5,13 @@ using Steamphone.Core;
 
 namespace Steamphone.ViewModels;
 
-public partial class StatsViewModel(AppDatabase database) : BaseViewModel
+public partial class StatsViewModel(AppDatabase database, PlaytimeTracker tracker) : BaseViewModel
 {
     public ObservableCollection<GameTotal> Games { get; } = [];
     [ObservableProperty] private string totalTime = "0 ore și 0 minute";
     public override Task RefreshAsync() => PerformAsync(async () =>
     {
+        await tracker.FlushAsync();
         var totals = await database.GetTotalsAsync();
         Games.Clear();
         foreach (var total in totals) Games.Add(total);

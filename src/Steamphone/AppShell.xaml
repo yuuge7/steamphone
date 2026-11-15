@@ -3,14 +3,15 @@
        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
        x:Class="Steamphone.AppShell"
        FlyoutBehavior="Disabled"
-       Shell.BackgroundColor="{AppThemeBinding Light=White, Dark=#15283D}"
+       Shell.BackgroundColor="{AppThemeBinding Light=#F0F5FC, Dark=#0D1624}"
        Shell.ForegroundColor="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}"
        Shell.TitleColor="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}"
-       Shell.TabBarBackgroundColor="{AppThemeBinding Light=White, Dark=#15283D}"
+       Shell.TabBarBackgroundColor="{AppThemeBinding Light=White, Dark=#101E30}"
        Shell.TabBarForegroundColor="{AppThemeBinding Light=#176BA4, Dark=#66C0F4}"
        Shell.TabBarUnselectedColor="{AppThemeBinding Light=#52657A, Dark=#A9BBD0}">
   <TabBar>
     <ShellContent x:Name="HomeTab" Title="Acasă" Route="home" Icon="home.png" />
+    <ShellContent x:Name="FriendsTab" Title="Prieteni" Route="friends" Icon="friends.png" />
     <ShellContent x:Name="MappingsTab" Title="Mapări" Route="mappings" Icon="mappings.png" />
     <ShellContent x:Name="StatsTab" Title="Statistici" Route="stats" Icon="stats.png" />
     <ShellContent x:Name="SettingsTab" Title="Setări" Route="settings" Icon="settings.png" />

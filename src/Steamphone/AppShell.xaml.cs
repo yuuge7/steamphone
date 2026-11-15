@@ -9,6 +9,7 @@ public partial class AppShell : Shell
     {
         InitializeComponent();
         HomeTab.ContentTemplate = new DataTemplate(() => services.GetRequiredService<DashboardPage>());
+        FriendsTab.ContentTemplate = new DataTemplate(() => services.GetRequiredService<FriendsPage>());
         MappingsTab.ContentTemplate = new DataTemplate(() => services.GetRequiredService<MappingsPage>());
         StatsTab.ContentTemplate = new DataTemplate(() => services.GetRequiredService<StatsPage>());
         SettingsTab.ContentTemplate = new DataTemplate(() => services.GetRequiredService<SettingsPage>());

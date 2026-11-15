@@ -5,6 +5,7 @@ using Android.OS;
 using AndroidX.Core.App;
 using Microsoft.Extensions.DependencyInjection;
 using Steamphone.Services;
+using Steamphone.Core;
 
 namespace Steamphone.Platforms.Android;
 
@@ -40,8 +41,10 @@ public sealed class PresenceService : Service
         var power = (PowerManager)GetSystemService(PowerService)!;
         wakeLock = power.NewWakeLock(WakeLockFlags.Partial, "Steamphone:Presence");
         wakeLock?.SetReferenceCounted(false);
-        wakeLock?.Acquire(10 * 60 * 1000L);
-        var worker = IPlatformApplication.Current!.Services.GetRequiredService<MonitoringWorker>();
+        var services = IPlatformApplication.Current!.Services;
+        var worker = services.GetRequiredService<MonitoringWorker>();
+        var monitor = services.GetRequiredService<MonitorState>();
+        var device = services.GetRequiredService<IDeviceServices>();
         running = Task.Run(async () =>
         {
             var renewAt = SystemClock.ElapsedRealtime() + 5 * 60 * 1000L;
@@ -50,8 +53,11 @@ public sealed class PresenceService : Service
             {
                 await worker.RunAsync(message =>
                 {
-                    // Renew a bounded lease while the user-started foreground service remains alive.
-                    if (SystemClock.ElapsedRealtime() >= renewAt)
+                    var snapshot = monitor.Snapshot;
+                    var hold = snapshot.KeepConnectionWhenLocked && !device.IsInteractive && device.HasInternet &&
+                        snapshot.Visibility != VisibilityMode.LocalOnly;
+                    if (!hold && wakeLock?.IsHeld == true) wakeLock.Release();
+                    if (hold && (wakeLock?.IsHeld != true || SystemClock.ElapsedRealtime() >= renewAt))
                     {
                         wakeLock?.Acquire(10 * 60 * 1000L);
                         renewAt = SystemClock.ElapsedRealtime() + 5 * 60 * 1000L;

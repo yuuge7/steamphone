@@ -10,7 +10,7 @@
       <Color x:Key="Navy">#15283D</Color>
       <Color x:Key="SteamBlue">#66C0F4</Color>
       <Style TargetType="ContentPage" ApplyToDerivedTypes="True">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F2F6FA, Dark=#101C2C}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F0F5FC, Dark=#0D1624}" />
       </Style>
       <Style TargetType="Label">
         <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
@@ -35,14 +35,11 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light=#397397, Dark=#80BDE0}" />
       </Style>
       <Style x:Key="Card" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#1B2D41}" />
-        <Setter Property="Stroke" Value="{AppThemeBinding Light=#DFE8F0, Dark=#2D435A}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#15253A}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light=#DAE5F2, Dark=#293E58}" />
         <Setter Property="StrokeThickness" Value="1" />
-        <Setter Property="StrokeShape" Value="RoundRectangle 22" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 18" />
         <Setter Property="Padding" Value="20" />
-        <Setter Property="Shadow">
-          <Setter.Value><Shadow Brush="#070F1A" Opacity="0.10" Offset="0,4" Radius="12" /></Setter.Value>
-        </Setter>
       </Style>
       <Style TargetType="Button">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#176BA4, Dark=#66C0F4}" />
@@ -73,6 +70,26 @@
       <Style TargetType="SearchBar">
         <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
         <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light=#52657A, Dark=#A9BBD0}" />
+      </Style>
+      <Style x:Key="ModeTile" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#15253A}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light=#DAE5F2, Dark=#293E58}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+        <Setter Property="Padding" Value="8,6,12,14" />
+      </Style>
+      <Style TargetType="RadioButton">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+      </Style>
+      <Style x:Key="SectionTitle" TargetType="Label">
+        <Setter Property="FontSize" Value="21" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
+        <Setter Property="SemanticProperties.HeadingLevel" Value="Level2" />
       </Style>
       <Style x:Key="Error" TargetType="Label" x:DataType="vm:BaseViewModel">
         <Setter Property="Text" Value="{Binding Error}" />

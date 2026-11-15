@@ -12,10 +12,13 @@ The interface currently uses Romanian. Source code, build tooling, and this cont
 - Persistent login through Android-backed SecureStorage; passwords are never saved.
 - Installed-app selector with actual display names and icons, search, and optional system apps.
 - Editable app-to-AppID mappings and Online / Away / Busy / Snooze / Offline idle status.
+- Independent Public, Invisible, Online with game hidden, and fully Local visibility modes.
+- A live friends hub with game activity, search, filters, profiles, and Steam store/library shortcuts.
 - Foreground service with a persistent notification, stop action, and reconnect backoff.
 - Local playtime history with crash recovery and conservative handling of suspended execution.
 - JSON backup import/export for mappings, preferences, and playtime history.
-- Light, Dark, and System themes with four navigation tabs.
+- Light, Dark, and System themes with five navigation tabs and an explicit Steam presence preview.
+- Event-driven reconnects, configuration caching, batched history writes, and optional screen-off connection continuity.
 - Signed ARM64 and x64 APKs, automatic GitHub releases, and commit-based changelogs.
 
 ## Install and use
@@ -29,7 +32,34 @@ Open the repository's **Releases** page and download the **arm64** APK for most 
 5. Open **Mapări**, select an installed app, and enter the Steam AppID to announce.
 6. Start monitoring from **Acasă**, then open the mapped app. Return to the launcher or another app to restore the selected idle status.
 
-A mapped game uses Online while active. The selected idle status applies after leaving the game. Locking the screen stops local playtime accounting. The notification's **Oprește** action stops the service. Signing out removes the Steam session while retaining mappings and local history.
+In **Joc vizibil**, a mapped game uses Online while active. The selected idle status applies after leaving the game. Locking the screen stops local playtime accounting. The notification's **Oprește** action stops the service. Signing out removes the Steam session while retaining mappings and local history.
+
+### Visibility and the friends hub
+
+Choose a mode under **Acasă → Cum te văd prietenii**. It saves automatically, applies during monitoring, and survives restarts and backup transfer.
+
+| Mode | Steamphone presence | Game announcements | Local history | Live friends |
+| --- | --- | --- | --- | --- |
+| **Joc vizibil** | Online in a mapped game; selected idle status otherwise | Enabled | Yes | Yes |
+| **Invizibil** | Steam Invisible (appears offline in the friends UI) | Disabled by default; optional opt-in | Yes | Yes |
+| **Doar online** | Online, including during a mapped game | Disabled | Yes | Yes |
+| **Doar local** | Disconnects from Steam | Disabled; no Steam connection | Yes | No |
+
+Private modes do not submit the mapped game's AppID by default, including on reconnect. Switching from an announced game to a mode that suppresses announcements clears that announcement before applying the new persona state, provided this client owns the playing session. Unannounced playtime is recorded only on the phone. Existing installations keep their previous public behavior until a different mode is selected.
+
+To preserve the option of Steam hours with an Invisible persona, enable **Setări → Preferințe → Anunță jocul când sunt invizibil** and save. This is off by default. When enabled, Invisible is applied before submitting the game ID, including after reconnect; Valve still decides whether hours are credited. The game is sent to Steam, and profile privacy remains separate. Online-only and Local modes always suppress the game, even with this preference enabled.
+
+These controls apply to Steamphone's connection. Another Steam client, a game on your PC, and your Steam profile's game privacy settings remain independent. Invisible is a friends-list presentation state, not a promise that Valve receives no connection metadata. Use **Doar local** when no Steam connection is wanted.
+
+**Prieteni** shows your real friends sorted by playing, online, then offline. Search by name or game, filter the list, and tap a friend for their profile or game store page. Steam sends updates through the same authenticated connection; no Web API key, repeated web polling, or avatar image downloads are required. Store, library, and profile shortcuts open externally only when tapped. This is a native companion hub, not an injected Shift+Tab overlay or a full chat client.
+
+### Battery and data
+
+The configured 1–10 second interval applies with the phone unlocked. Screen and network broadcasts wake monitoring immediately; locked-screen fallback checks run at most every 30 seconds without scanning usage events. Configuration is reloaded only after an edit. Unchanged presence and notifications are not resent, and reconnect waits for connection events with exponential backoff up to two minutes. No connection attempts run while Android reports no Internet or Local mode is selected.
+
+History accumulates in memory and checkpoints every ten seconds, on app transitions, and on stop. Opening statistics or exporting a backup flushes the last observed time. Abrupt process termination may lose up to one checkpoint interval; suspended gaps over 30 seconds are still excluded.
+
+In **Setări → Preferințe**, **Păstrează conexiunea cu ecranul blocat** is off by default so Android can suspend the CPU. Turn it on to opt into a bounded, renewed wake lock while locked, Internet is available, and a Steam mode is selected. It uses more battery and does not override Doze or manufacturer restrictions. A 5–10 second detection interval further reduces active checks at the cost of slower game transitions.
 
 ### Import and export
 
@@ -42,7 +72,7 @@ A backup contains preferences, app mappings, and checkpointed playtime sessions.
 
 Imports merge history by session ID. Importing the same file repeatedly does not double playtime, and an older backup does not reduce an existing session's recorded duration. Matching package mappings and preferences take the imported values; unrelated mappings/history remain. Monitoring briefly stops during an import and restarts if it was previously running. Invalid files or conflicting session identities leave the database unchanged.
 
-Backups are UTF-8 JSON with schema version 1, a 32 MB size limit, and at most 100,000 mappings or sessions. A valid empty template is available at [examples/steamphone-backup.json](examples/steamphone-backup.json). Files use Android's Storage Access Framework, so broad storage access is not required.
+Backups are UTF-8 JSON with schema version 1, a 32 MB size limit, and at most 100,000 mappings or sessions. Visibility, Invisible game-announcement opt-in, and screen-off connection preferences are included. Older backups without these optional fields import with Public visibility, the opt-in disabled, and battery-friendly screen-off behavior; older app versions may reject backups containing the new fields. A valid empty template is available at [examples/steamphone-backup.json](examples/steamphone-backup.json). Files use Android's Storage Access Framework, so broad storage access is not required.
 
 ## Development setup
 

@@ -5,8 +5,36 @@
              x:Class="Steamphone.Views.SettingsPage" x:DataType="vm:SettingsViewModel" Title="Setări">
   <ScrollView>
     <VerticalStackLayout Padding="20,20,20,32" Spacing="18" MaximumWidthRequest="620" HorizontalOptions="Fill">
-      <Label Text="Pregătit pentru fundal" Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
-      <Label Text="Android are nevoie de acordul tău pentru a recunoaște aplicațiile și a păstra serviciul activ." Style="{StaticResource Subtitle}" />
+      <Label Text="FĂRĂ RISIPĂ" Style="{StaticResource Eyebrow}" />
+      <Label Text="Tu alegi ritmul." Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
+      <Label Text="Conexiune, baterie și date. Toate sub control." Style="{StaticResource Subtitle}" />
+      <Border Style="{StaticResource Card}">
+        <VerticalStackLayout Spacing="10">
+          <Label Text="Consum redus, implicit" Style="{StaticResource SectionTitle}" />
+          <Label Text="Cu ecranul blocat, detectarea jocurilor se oprește și verificările se răresc. Prietenii folosesc conexiunea Steam existentă, fără avatare descărcate sau pagini web încărcate în fundal." Style="{StaticResource Subtitle}" />
+          <Label Text="Pentru zero trafic Steam, alege Doar local din Acasă." Style="{StaticResource Subtitle}" FontSize="12" />
+        </VerticalStackLayout>
+      </Border>
+      <Border Style="{StaticResource Card}">
+        <VerticalStackLayout Spacing="10">
+          <Label Text="Preferințe" FontSize="20" FontAttributes="Bold" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <Label Text="Anunță jocul când sunt invizibil" FontAttributes="Bold" VerticalOptions="Center" />
+            <Switch Grid.Column="1" IsToggled="{Binding AnnounceGameWhileInvisible}" SemanticProperties.Description="Trimite jocul către Steam cu status Invizibil; poate permite ore Steam" />
+          </Grid>
+          <Label Text="Opțional, doar pentru modul Invizibil. Poate permite ore Steam, dar trimite jocul către Steam. Invizibil controlează afișarea în lista de prieteni; istoricul profilului și celelalte sesiuni au setări separate. Oprit implicit." Style="{StaticResource Subtitle}" FontSize="12" />
+          <Label Text="Temă" Style="{StaticResource Subtitle}" /><Picker Title="Temă" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" />
+          <Label Text="Verifică aplicația la fiecare (secunde)" Style="{StaticResource Subtitle}" /><Picker Title="Interval" ItemsSource="{Binding Intervals}" SelectedItem="{Binding PollSeconds}" />
+          <Label Text="2 secunde oferă un echilibru bun. 5–10 secunde reduc verificările, dar schimbările de joc apar mai târziu." Style="{StaticResource Subtitle}" FontSize="12" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <Label Text="Păstrează conexiunea cu ecranul blocat" FontAttributes="Bold" VerticalOptions="Center" />
+            <Switch Grid.Column="1" IsToggled="{Binding KeepConnectionWhenLocked}" SemanticProperties.Description="Menține procesorul activ pentru conexiunea Steam cu ecranul blocat" />
+          </Grid>
+          <Label Text="Oprit: Android poate suspenda conexiunea pentru a economisi baterie. Pornit: procesorul rămâne activ, cu un consum mai mare. Jocurile nu sunt cronometrate cât ecranul este blocat." Style="{StaticResource Subtitle}" FontSize="12" />
+          <Button Text="Salvează preferințele" Command="{Binding SaveCommand}" />
+          <Label Text="{Binding SavedMessage}" Style="{StaticResource Subtitle}" />
+        </VerticalStackLayout>
+      </Border>
       <Border Style="{StaticResource Card}">
         <VerticalStackLayout Spacing="12">
           <Label Text="Backup și transfer" FontSize="20" FontAttributes="Bold" />
@@ -30,15 +58,6 @@
           <BoxView HeightRequest="1" Color="{AppThemeBinding Light=#DFE8F0, Dark=#2D435A}" Margin="0,4" />
           <Label Text="Notificare persistentă" FontSize="19" FontAttributes="Bold" /><Label Text="{Binding NotificationLabel}" Style="{StaticResource Subtitle}" />
           <Button Text="Deschide setările notificărilor" Command="{Binding NotificationsCommand}" Style="{StaticResource Secondary}" />
-        </VerticalStackLayout>
-      </Border>
-      <Border Style="{StaticResource Card}">
-        <VerticalStackLayout Spacing="10">
-          <Label Text="Preferințe" FontSize="20" FontAttributes="Bold" />
-          <Label Text="Temă" Style="{StaticResource Subtitle}" /><Picker Title="Temă" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" />
-          <Label Text="Verifică aplicația la fiecare (secunde)" Style="{StaticResource Subtitle}" /><Picker Title="Interval" ItemsSource="{Binding Intervals}" SelectedItem="{Binding PollSeconds}" />
-          <Button Text="Salvează preferințele" Command="{Binding SaveCommand}" />
-          <Label Text="{Binding SavedMessage}" Style="{StaticResource Subtitle}" />
         </VerticalStackLayout>
       </Border>
       <Label Style="{StaticResource Error}" />

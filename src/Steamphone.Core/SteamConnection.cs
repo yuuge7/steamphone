@@ -14,9 +14,13 @@ public sealed class SteamConnection : IAsyncDisposable
     private readonly SteamClient client;
     private readonly SteamUser user;
     private readonly SteamFriends friends;
+    private readonly SteamPresenceWriter presence;
     private readonly CallbackManager callbacks;
     private readonly ICredentialStore credentials;
     private readonly SteamGuardBroker guard;
+    private readonly Func<Task<AppSettings>>? loadSettings;
+    private readonly object friendSync = new();
+    private readonly Dictionary<ulong, SteamFriend> roster = [];
     private readonly SemaphoreSlim operation = new(1, 1);
     private readonly object sync = new();
     private readonly CancellationTokenSource lifetime = new();
@@ -29,30 +33,45 @@ public sealed class SteamConnection : IAsyncDisposable
     private SteamState state = new(ConnectionPhase.Disconnected, "Deconectat");
     private bool playingBlocked = true;
     private volatile bool transportStarted;
-    private bool presenceSent;
-    private uint? desiredAppId, sentAppId;
-    private BaseStatus desiredStatus = BaseStatus.Online, sentStatus;
+    private uint? desiredAppId;
+    private BaseStatus desiredStatus = BaseStatus.Online;
+    private VisibilityMode desiredVisibility;
+    private bool desiredInvisibleAnnouncement;
 
     public event Action<SteamState>? Changed;
+    public event Action? FriendsChanged;
+    public bool FriendsReady { get; private set; }
+    public IReadOnlyList<SteamFriend> GetFriendsSnapshot()
+    {
+        lock (friendSync) return roster.Values.OrderByDescending(x => x.IsPlaying)
+            .ThenByDescending(x => x.IsOnline).ThenBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase).ToArray();
+    }
     public SteamState State { get { lock (sync) return state; } }
     public bool CanReconnect => State.Phase != ConnectionPhase.NeedsLogin;
 
-    public SteamConnection(ICredentialStore credentials, SteamGuardBroker guard, string installationId)
+    public SteamConnection(ICredentialStore credentials, SteamGuardBroker guard, string installationId,
+        Func<Task<AppSettings>>? loadSettings = null)
     {
         this.credentials = credentials;
         this.guard = guard;
+        this.loadSettings = loadSettings;
         var configuration = SteamConfiguration.Create(builder => builder
             .WithProtocolTypes(ProtocolTypes.Tcp)
             .WithConnectionTimeout(TimeSpan.FromSeconds(20))
+            .WithDefaultPersonaStateFlags(EClientPersonaStateFlag.PlayerName | EClientPersonaStateFlag.Presence |
+                EClientPersonaStateFlag.GameExtraInfo)
             .WithMachineInfoProvider(new InstallationMachineInfo(installationId)));
         client = new SteamClient(configuration);
         user = client.GetHandler<SteamUser>()!;
         friends = client.GetHandler<SteamFriends>()!;
+        presence = new SteamPresenceWriter(friends.SetPersonaState, appId => client.Send(SteamPresence.GamesPlayed(appId)));
         callbacks = new CallbackManager(client);
         subscriptions.Add(callbacks.Subscribe<SteamClient.ConnectedCallback>(_ => connected?.TrySetResult(true)));
         subscriptions.Add(callbacks.Subscribe<SteamClient.DisconnectedCallback>(_ =>
         {
-            lock (sync) { presenceSent = false; playingBlocked = true; transportStarted = false; }
+            lock (sync) { presence.Reset(); playingBlocked = true; transportStarted = false; }
+            lock (friendSync) { roster.Clear(); FriendsReady = false; }
+            FriendsChanged?.Invoke();
             connected?.TrySetException(new IOException("Conexiunea Steam s-a închis."));
             loggedOn?.TrySetException(new IOException("Conexiunea Steam s-a închis."));
             disconnected?.TrySetResult(true);
@@ -60,6 +79,21 @@ public sealed class SteamConnection : IAsyncDisposable
                 Publish(new(ConnectionPhase.Disconnected, "Conexiune pierdută. Se va reîncerca.", State.Username));
         }));
         subscriptions.Add(callbacks.Subscribe<SteamUser.LoggedOnCallback>(result => loggedOn?.TrySetResult(result.Result)));
+        subscriptions.Add(callbacks.Subscribe<SteamFriends.FriendsListCallback>(_ =>
+        {
+            lock (friendSync)
+            {
+                roster.Clear();
+                for (var i = 0; i < friends.GetFriendCount(); i++) UpdateFriend(friends.GetFriendByIndex(i));
+                FriendsReady = true;
+            }
+            FriendsChanged?.Invoke();
+        }));
+        subscriptions.Add(callbacks.Subscribe<SteamFriends.PersonaStateCallback>(value =>
+        {
+            lock (friendSync) UpdateFriend(value.FriendID);
+            FriendsChanged?.Invoke();
+        }));
         subscriptions.Add(callbacks.Subscribe<SteamUser.LoggedOffCallback>(result =>
         {
             var needsLogin = IsPermanentFailure(result.Result) || result.Result is EResult.LoggedInElsewhere or EResult.LogonSessionReplaced;
@@ -69,7 +103,7 @@ public sealed class SteamConnection : IAsyncDisposable
         }));
         subscriptions.Add(callbacks.Subscribe<SteamUser.PlayingSessionStateCallback>(result =>
         {
-            lock (sync) { playingBlocked = result.PlayingBlocked; presenceSent = false; }
+            lock (sync) { playingBlocked = result.PlayingBlocked; presence.ResetPlayingSession(); }
             if (State.Phase == ConnectionPhase.Connected)
             {
                 Publish(new(ConnectionPhase.Connected, result.PlayingBlocked
@@ -97,6 +131,25 @@ public sealed class SteamConnection : IAsyncDisposable
     {
         lock (sync) state = value;
         Changed?.Invoke(value);
+    }
+
+    // Called only by the serialized callback pump. SteamKit has already merged partial persona updates.
+    private void UpdateFriend(SteamID id)
+    {
+        if (friends.GetFriendRelationship(id) != EFriendRelationship.Friend) { roster.Remove(id.ConvertToUInt64()); return; }
+        roster[id.ConvertToUInt64()] = new(id.ConvertToUInt64(), friends.GetFriendPersonaName(id) ?? "Prieten Steam",
+            friends.GetFriendPersonaState(id), friends.GetFriendGamePlayed(id).AppID, friends.GetFriendGamePlayedName(id));
+    }
+
+    private async Task LoadPresenceSettingsAsync()
+    {
+        if (loadSettings is null) return;
+        var settings = await loadSettings();
+        lock (sync)
+        {
+            desiredStatus = settings.DefaultStatus; desiredVisibility = settings.Visibility;
+            desiredInvisibleAnnouncement = settings.AnnounceGameWhileInvisible;
+        }
     }
 
     public async Task LoginAsync(string username, string password, CancellationToken cancellation)
@@ -180,6 +233,10 @@ public sealed class SteamConnection : IAsyncDisposable
 
     private async Task ConnectCoreAsync(CancellationToken token)
     {
+        await LoadPresenceSettingsAsync();
+        lock (sync)
+            if (desiredVisibility == VisibilityMode.LocalOnly)
+                throw new InvalidOperationException("Modul Doar local nu se conectează la Steam. Alege alt mod din Acasă.");
         Publish(new(ConnectionPhase.Connecting, "Conectare la rețeaua Steam…", State.Username));
         connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
         lock (sync) { transportStarted = true; playingBlocked = true; }
@@ -198,14 +255,20 @@ public sealed class SteamConnection : IAsyncDisposable
         });
         var result = await loggedOn.Task.WaitAsync(TimeSpan.FromSeconds(30), token);
         if (result != EResult.OK) throw new SteamLogonException(result);
-        lock (sync) presenceSent = false;
+        await LoadPresenceSettingsAsync();
+        lock (sync) presence.Reset();
         Publish(new(ConnectionPhase.Connected, playingBlocked ? "Conectat. Se verifică sesiunea de joc…" : "Conectat la Steam", account.Username, playingBlocked));
         ApplyPresence();
     }
 
-    public void SetPresence(uint? appId, BaseStatus status)
+    public void SetPresence(uint? appId, BaseStatus status, VisibilityMode visibility = VisibilityMode.Public,
+        bool announceGameWhileInvisible = false)
     {
-        lock (sync) { desiredAppId = appId; desiredStatus = status; }
+        lock (sync)
+        {
+            desiredAppId = appId; desiredStatus = status; desiredVisibility = visibility;
+            desiredInvisibleAnnouncement = announceGameWhileInvisible;
+        }
         ApplyPresence();
     }
 
@@ -214,21 +277,7 @@ public sealed class SteamConnection : IAsyncDisposable
         lock (sync)
         {
             if (state.Phase != ConnectionPhase.Connected) return;
-            var visibleAppId = desiredAppId;
-            var visibleStatus = visibleAppId.HasValue ? BaseStatus.Online : desiredStatus;
-            if (!presenceSent || sentStatus != visibleStatus)
-            {
-                friends.SetPersonaState(SteamPresence.Persona(visibleAppId, desiredStatus));
-            }
-            // Steam disconnects clients that send GamesPlayed while another client owns the playing session.
-            if (playingBlocked) return;
-            if (!presenceSent || sentAppId != visibleAppId)
-            {
-                client.Send(SteamPresence.GamesPlayed(visibleAppId));
-            }
-            sentAppId = visibleAppId;
-            sentStatus = visibleStatus;
-            presenceSent = true;
+            presence.Apply(SteamPresence.Resolve(desiredAppId, desiredStatus, desiredVisibility, desiredInvisibleAnnouncement), playingBlocked);
         }
     }
 
@@ -248,7 +297,15 @@ public sealed class SteamConnection : IAsyncDisposable
         await operation.WaitAsync();
         try
         {
-            SetPresence(null, BaseStatus.Offline);
+            lock (sync)
+            {
+                if (state.Phase == ConnectionPhase.Connected)
+                {
+                    if (!playingBlocked) client.Send(SteamPresence.GamesPlayed(null));
+                    friends.SetPersonaState(EPersonaState.Offline);
+                }
+                presence.Reset();
+            }
             await DisconnectCoreAsync();
             Publish(new(ConnectionPhase.Disconnected, "Deconectat", State.Username));
         }

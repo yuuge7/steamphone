@@ -8,8 +8,8 @@
     <VerticalStackLayout Padding="24,40,24,32" Spacing="22" MaximumWidthRequest="540" HorizontalOptions="Fill">
       <Label Text="STEAMPHONE" Style="{StaticResource Eyebrow}" />
       <VerticalStackLayout Spacing="8">
-        <Label Text="Telefonul tău.&#10;Prezent pe Steam." Style="{StaticResource Title}" FontSize="40" SemanticProperties.HeadingLevel="Level1" />
-        <Label Text="Deschizi un joc pe Android. Prietenii îl văd pe Steam." Style="{StaticResource Subtitle}" />
+        <Label Text="Jocul tău.&#10;Vizibilitatea ta." Style="{StaticResource Title}" FontSize="40" SemanticProperties.HeadingLevel="Level1" />
+        <Label Text="Jocuri pe Android, prieteni pe Steam. Alegi când îți arăți activitatea și când rămâi invizibil." Style="{StaticResource Subtitle}" />
       </VerticalStackLayout>
       <Border Style="{StaticResource Card}">
         <VerticalStackLayout Spacing="10">

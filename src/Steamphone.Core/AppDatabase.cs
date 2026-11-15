@@ -7,6 +7,15 @@ public sealed class AppDatabase
     static AppDatabase() => SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_e_sqlite3());
     private readonly SQLiteAsyncConnection connection;
     private readonly Lazy<Task> initialize;
+    private readonly SemaphoreSlim settingsGate = new(1, 1);
+    private long configurationRevision;
+    public long ConfigurationRevision => Interlocked.Read(ref configurationRevision);
+    public event Action? ConfigurationChanged;
+    private void NotifyConfigurationChanged()
+    {
+        Interlocked.Increment(ref configurationRevision);
+        ConfigurationChanged?.Invoke();
+    }
 
     public AppDatabase(string path)
     {
@@ -38,12 +47,14 @@ public sealed class AppDatabase
             throw new ArgumentException("Steam AppID trebuie să fie între 1 și 4294967295.");
         await initialize.Value;
         await connection.InsertOrReplaceAsync(mapping);
+        NotifyConfigurationChanged();
     }
 
     public async Task DeleteMappingAsync(string packageName)
     {
         await initialize.Value;
         await connection.DeleteAsync<AppMapping>(packageName);
+        NotifyConfigurationChanged();
     }
 
     public async Task<AppSettings> GetSettingsAsync()
@@ -54,6 +65,29 @@ public sealed class AppDatabase
 
     public async Task SaveSettingsAsync(AppSettings settings)
     {
+        await settingsGate.WaitAsync();
+        try { await SaveSettingsCoreAsync(settings); }
+        finally { settingsGate.Release(); }
+        NotifyConfigurationChanged();
+    }
+
+    public async Task UpdateSettingsAsync(Action<AppSettings> update)
+    {
+        await settingsGate.WaitAsync();
+        try
+        {
+            var settings = await GetSettingsAsync();
+            update(settings);
+            await SaveSettingsCoreAsync(settings);
+        }
+        finally { settingsGate.Release(); }
+        NotifyConfigurationChanged();
+    }
+
+    private async Task SaveSettingsCoreAsync(AppSettings settings)
+    {
+        if (!Enum.IsDefined(settings.Visibility) || !Enum.IsDefined(settings.DefaultStatus))
+            throw new ArgumentException("Mod de vizibilitate invalid.");
         await initialize.Value;
         settings.Id = 1;
         settings.PollSeconds = Math.Clamp(settings.PollSeconds, 1, 10);
@@ -100,7 +134,8 @@ public sealed class AppDatabase
         await connection.RunInTransactionAsync(db =>
         {
             var settings = db.Find<AppSettings>(1) ?? new AppSettings();
-            backup.Settings = new(settings.DefaultStatus, settings.Theme, settings.PollSeconds);
+            backup.Settings = new(settings.DefaultStatus, settings.Theme, settings.PollSeconds,
+                settings.Visibility, settings.KeepConnectionWhenLocked, settings.AnnounceGameWhileInvisible);
             backup.Mappings = db.Table<AppMapping>().ToList()
                 .Select(x => new BackupMapping(x.PackageName, x.DisplayName, x.SteamAppId, x.Enabled)).ToList();
             backup.Sessions = db.Table<PlaytimeStats>().ToList().Select(x => new BackupSession(x.SessionId,
@@ -134,8 +169,11 @@ public sealed class AppDatabase
             try { _ = db.Table<PlaytimeStats>().ToList().Aggregate(0L, (sum, x) => checked(sum + x.DurationTicks)); }
             catch (OverflowException ex) { throw new InvalidDataException("Durata cumulată este prea mare. Import anulat.", ex); }
             db.InsertOrReplace(new AppSettings { DefaultStatus = backup.Settings.DefaultStatus,
-                Theme = backup.Settings.Theme, PollSeconds = backup.Settings.PollSeconds });
+                Theme = backup.Settings.Theme, PollSeconds = backup.Settings.PollSeconds,
+                Visibility = backup.Settings.Visibility, KeepConnectionWhenLocked = backup.Settings.KeepConnectionWhenLocked,
+                AnnounceGameWhileInvisible = backup.Settings.AnnounceGameWhileInvisible });
         });
+        NotifyConfigurationChanged();
         return new ImportSummary(backup.Mappings.Count, backup.Sessions.Count);
     }
 

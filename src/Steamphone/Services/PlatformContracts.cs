@@ -12,6 +12,9 @@ public interface IDeviceServices
     bool HasUsageAccess { get; }
     bool BatteryOptimized { get; }
     bool NotificationsAllowed { get; }
+    bool IsInteractive { get; }
+    bool HasInternet { get; }
+    event Action? EnvironmentChanged;
     Task<IReadOnlyList<InstalledApp>> GetInstalledAppsAsync(CancellationToken cancellation);
     string? GetForegroundPackage();
     void OpenUsageSettings();
@@ -26,7 +29,8 @@ public interface IMonitoringController
 }
 
 public sealed record MonitorSnapshot(bool Running = false, string? CurrentApp = null,
-    string Message = "Monitorizarea este oprită", bool UsageAccess = false);
+    string Message = "Monitorizarea este oprită", bool UsageAccess = false,
+    VisibilityMode Visibility = VisibilityMode.Public, bool KeepConnectionWhenLocked = false);
 
 public sealed class MonitorState
 {
@@ -37,7 +41,12 @@ public sealed class MonitorState
     public void Update(Func<MonitorSnapshot, MonitorSnapshot> update)
     {
         MonitorSnapshot value;
-        lock (sync) snapshot = value = update(snapshot);
+        lock (sync)
+        {
+            value = update(snapshot);
+            if (value == snapshot) return;
+            snapshot = value;
+        }
         Changed?.Invoke(value);
     }
 }
