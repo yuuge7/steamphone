@@ -22,8 +22,10 @@
     <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.120" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <ProjectReference Include="../Steamphone.Core/Steamphone.Core.csproj" />
-    <MauiIcon Include="Resources/AppIcon/appicon.svg" Color="#15283D" />
-    <MauiSplashScreen Include="Resources/Splash/splash.svg" Color="#15283D" BaseSize="128,128" />
+    <MauiIcon Include="Resources/AppIcon/appicon.svg" Color="#101720" />
+    <MauiSplashScreen Include="Resources/Splash/splash.svg" Color="#101720" BaseSize="128,128" />
     <MauiImage Include="Resources/Images/*" />
+    <MauiFont Include="Resources/Fonts/*.ttf" />
+    <MauiAsset Include="Resources/Fonts/Licenses/*.txt" LogicalName="font-licenses/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

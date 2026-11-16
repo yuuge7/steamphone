@@ -2,105 +2,143 @@
 <Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Steamphone"
-             xmlns:vm="clr-namespace:Steamphone.ViewModels"
-             x:Class="Steamphone.App">
+             xmlns:vm="clr-namespace:Steamphone.ViewModels" x:Class="Steamphone.App">
   <Application.Resources>
     <ResourceDictionary>
       <local:InverseBoolConverter x:Key="Not" />
-      <Color x:Key="Navy">#15283D</Color>
-      <Color x:Key="SteamBlue">#66C0F4</Color>
+      <Color x:Key="Navy">#101720</Color>
+      <Color x:Key="SteamBlue">#73C7E8</Color>
       <Style TargetType="ContentPage" ApplyToDerivedTypes="True">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F0F5FC, Dark=#0D1624}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F3F6F8, Dark=#101720}" />
+        <Setter Property="Shell.NavBarIsVisible" Value="False" />
       </Style>
       <Style TargetType="Label">
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
-        <Setter Property="FontFamily" Value="sans-serif" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#162637, Dark=#EFF4F8}" />
+        <Setter Property="FontFamily" Value="Barlow" />
         <Setter Property="FontSize" Value="15" />
       </Style>
       <Style x:Key="Title" TargetType="Label">
-        <Setter Property="FontFamily" Value="sans-serif-condensed" />
-        <Setter Property="FontSize" Value="34" />
-        <Setter Property="FontAttributes" Value="Bold" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
+        <Setter Property="FontFamily" Value="Display" />
+        <Setter Property="FontSize" Value="36" />
+        <Setter Property="LineHeight" Value="1.05" />
+        <Setter Property="SemanticProperties.HeadingLevel" Value="Level1" />
       </Style>
       <Style x:Key="Subtitle" TargetType="Label">
         <Setter Property="FontSize" Value="14" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#52657A, Dark=#A9BBD0}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#536779, Dark=#A1B2C2}" />
         <Setter Property="LineHeight" Value="1.2" />
       </Style>
+      <Style x:Key="Caption" TargetType="Label" BasedOn="{StaticResource Subtitle}">
+        <Setter Property="FontSize" Value="12" />
+      </Style>
       <Style x:Key="Eyebrow" TargetType="Label">
+        <Setter Property="FontFamily" Value="BarlowSemiBold" />
         <Setter Property="FontSize" Value="11" />
-        <Setter Property="FontAttributes" Value="Bold" />
-        <Setter Property="CharacterSpacing" Value="1.5" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#397397, Dark=#80BDE0}" />
+        <Setter Property="CharacterSpacing" Value="1.8" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#3D6F86, Dark=#8CB2C6}" />
+      </Style>
+      <Style x:Key="SectionTitle" TargetType="Label">
+        <Setter Property="FontFamily" Value="BarlowSemiBold" />
+        <Setter Property="FontSize" Value="19" />
+        <Setter Property="SemanticProperties.HeadingLevel" Value="Level2" />
+      </Style>
+      <Style x:Key="Data" TargetType="Label">
+        <Setter Property="FontFamily" Value="Mono" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#536779, Dark=#96A8B9}" />
       </Style>
       <Style x:Key="Card" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#15253A}" />
-        <Setter Property="Stroke" Value="{AppThemeBinding Light=#DAE5F2, Dark=#293E58}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#19232E}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light=#DBE4EA, Dark=#2A3947}" />
         <Setter Property="StrokeThickness" Value="1" />
-        <Setter Property="StrokeShape" Value="RoundRectangle 18" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 16" />
         <Setter Property="Padding" Value="20" />
       </Style>
+      <Style x:Key="Input" TargetType="Border" BasedOn="{StaticResource Card}">
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+      </Style>
+      <Style x:Key="Divider" TargetType="BoxView">
+        <Setter Property="Color" Value="{AppThemeBinding Light=#DBE4EA, Dark=#2A3947}" />
+        <Setter Property="HeightRequest" Value="1" />
+      </Style>
       <Style TargetType="Button">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#176BA4, Dark=#66C0F4}" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=White, Dark=#102438}" />
-        <Setter Property="CornerRadius" Value="16" />
-        <Setter Property="FontAttributes" Value="Bold" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="MinimumHeightRequest" Value="48" />
-        <Setter Property="Padding" Value="16,10" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=White, Dark=#102532}" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="FontFamily" Value="BarlowSemiBold" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="MinimumHeightRequest" Value="50" />
+        <Setter Property="Padding" Value="18,12" />
+        <Setter Property="VisualStateManager.VisualStateGroups">
+          <VisualStateGroupList><VisualStateGroup x:Name="CommonStates">
+            <VisualState x:Name="Normal"><VisualState.Setters><Setter Property="Opacity" Value="1" /></VisualState.Setters></VisualState>
+            <VisualState x:Name="Disabled"><VisualState.Setters><Setter Property="Opacity" Value="0.4" /></VisualState.Setters></VisualState>
+            <VisualState x:Name="Focused"><VisualState.Setters><Setter Property="BorderWidth" Value="2" /><Setter Property="BorderColor" Value="{AppThemeBinding Light=#162637, Dark=White}" /></VisualState.Setters></VisualState>
+          </VisualStateGroup></VisualStateGroupList>
+        </Setter>
       </Style>
       <Style x:Key="Secondary" TargetType="Button">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#E6EFF7, Dark=#2C435B}" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#176BA4, Dark=#C1E6FC}" />
-        <Setter Property="CornerRadius" Value="16" />
-        <Setter Property="MinimumHeightRequest" Value="48" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#E7EEF3, Dark=#223140}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#225D77, Dark=#CCE0ED}" />
+        <Setter Property="FontFamily" Value="BarlowSemiBold" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="MinimumHeightRequest" Value="50" />
         <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="14,12" />
+      </Style>
+      <Style x:Key="Quiet" TargetType="Button" BasedOn="{StaticResource Secondary}">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" />
+      </Style>
+      <Style x:Key="Filter" TargetType="Button" BasedOn="{StaticResource Quiet}">
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="6,10" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#536779, Dark=#96A8B9}" />
       </Style>
       <Style TargetType="Entry">
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
-        <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light=#657A8E, Dark=#A9BBD0}" />
-        <Setter Property="MinimumHeightRequest" Value="48" />
+        <Setter Property="FontFamily" Value="Barlow" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#162637, Dark=#EFF4F8}" />
+        <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light=#64798A, Dark=#879BAC}" />
+        <Setter Property="MinimumHeightRequest" Value="52" />
       </Style>
       <Style TargetType="Picker">
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
-        <Setter Property="TitleColor" Value="{AppThemeBinding Light=#52657A, Dark=#A9BBD0}" />
+        <Setter Property="FontFamily" Value="Barlow" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#162637, Dark=#EFF4F8}" />
+        <Setter Property="TitleColor" Value="{AppThemeBinding Light=#536779, Dark=#A1B2C2}" />
         <Setter Property="MinimumHeightRequest" Value="48" />
       </Style>
       <Style TargetType="SearchBar">
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
-        <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light=#52657A, Dark=#A9BBD0}" />
+        <Setter Property="FontFamily" Value="Barlow" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="CancelButtonColor" Value="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#162637, Dark=#EFF4F8}" />
+        <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light=#64798A, Dark=#879BAC}" />
+        <Setter Property="MinimumHeightRequest" Value="52" />
       </Style>
-      <Style x:Key="ModeTile" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#15253A}" />
-        <Setter Property="Stroke" Value="{AppThemeBinding Light=#DAE5F2, Dark=#293E58}" />
-        <Setter Property="StrokeThickness" Value="1" />
-        <Setter Property="StrokeShape" Value="RoundRectangle 16" />
-        <Setter Property="Padding" Value="8,6,12,14" />
-      </Style>
+      <Style TargetType="Switch"><Setter Property="OnColor" Value="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" /></Style>
       <Style TargetType="RadioButton">
         <Setter Property="BackgroundColor" Value="Transparent" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#162637, Dark=#EFF4F8}" />
+        <Setter Property="FontFamily" Value="BarlowSemiBold" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="MinimumHeightRequest" Value="48" />
-      </Style>
-      <Style x:Key="SectionTitle" TargetType="Label">
-        <Setter Property="FontSize" Value="21" />
-        <Setter Property="FontAttributes" Value="Bold" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#15283D, Dark=#EDF4FB}" />
-        <Setter Property="SemanticProperties.HeadingLevel" Value="Level2" />
       </Style>
       <Style x:Key="Error" TargetType="Label" x:DataType="vm:BaseViewModel">
         <Setter Property="Text" Value="{Binding Error}" />
         <Setter Property="IsVisible" Value="{Binding HasError}" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light=#AE253C, Dark=#FFABAE}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#AD3044, Dark=#FFA6AE}" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Margin" Value="0,4" />
         <Setter Property="SemanticProperties.Description" Value="{Binding Error}" />
       </Style>
       <Style TargetType="ActivityIndicator">
-        <Setter Property="Color" Value="{AppThemeBinding Light=#176BA4, Dark=#66C0F4}" />
+        <Setter Property="Color" Value="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" />
         <Setter Property="HeightRequest" Value="28" />
       </Style>
     </ResourceDictionary>

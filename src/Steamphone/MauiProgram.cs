@@ -11,7 +11,24 @@ public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
-        var builder = MauiApp.CreateBuilder().UseMauiApp<App>();
+        var builder = MauiApp.CreateBuilder().UseMauiApp<App>().ConfigureFonts(fonts =>
+        {
+            fonts.AddFont("Barlow-Regular.ttf", "Barlow");
+            fonts.AddFont("Barlow-Medium.ttf", "BarlowMedium");
+            fonts.AddFont("Barlow-SemiBold.ttf", "BarlowSemiBold");
+            fonts.AddFont("BarlowSemiCondensed-SemiBold.ttf", "Display");
+            fonts.AddFont("JetBrainsMono-Regular.ttf", "Mono");
+        });
+        Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("CleanInput", (handler, _) =>
+            handler.PlatformView.BackgroundTintList = global::Android.Content.Res.ColorStateList.ValueOf(global::Android.Graphics.Color.Transparent));
+        Microsoft.Maui.Handlers.PickerHandler.Mapper.AppendToMapping("CleanInput", (handler, _) =>
+            handler.PlatformView.BackgroundTintList = global::Android.Content.Res.ColorStateList.ValueOf(global::Android.Graphics.Color.Transparent));
+        Microsoft.Maui.Handlers.SearchBarHandler.Mapper.AppendToMapping("CleanInput", (handler, _) =>
+        {
+            handler.PlatformView.FindViewById(Resource.Id.search_plate)?.SetBackgroundColor(global::Android.Graphics.Color.Transparent);
+            handler.PlatformView.SetBackgroundColor(global::Android.Graphics.Color.Transparent);
+        });
+        builder.Services.AddSingleton(_ => new SteamImageCache(new HttpClient(), Path.Combine(FileSystem.CacheDirectory, "steam-social")));
         builder.Services.AddSingleton(_ => new AppDatabase(Path.Combine(FileSystem.AppDataDirectory, "steamphone.db3")));
         builder.Services.AddSingleton<ICredentialStore, SecureCredentialStore>();
         builder.Services.AddSingleton<SteamGuardBroker>();

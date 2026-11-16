@@ -4,65 +4,101 @@
              xmlns:vm="clr-namespace:Steamphone.ViewModels"
              x:Class="Steamphone.Views.SettingsPage" x:DataType="vm:SettingsViewModel" Title="Setări">
   <ScrollView>
-    <VerticalStackLayout Padding="20,20,20,32" Spacing="18" MaximumWidthRequest="620" HorizontalOptions="Fill">
-      <Label Text="FĂRĂ RISIPĂ" Style="{StaticResource Eyebrow}" />
-      <Label Text="Tu alegi ritmul." Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
-      <Label Text="Conexiune, baterie și date. Toate sub control." Style="{StaticResource Subtitle}" />
-      <Border Style="{StaticResource Card}">
-        <VerticalStackLayout Spacing="10">
-          <Label Text="Consum redus, implicit" Style="{StaticResource SectionTitle}" />
-          <Label Text="Cu ecranul blocat, detectarea jocurilor se oprește și verificările se răresc. Prietenii folosesc conexiunea Steam existentă, fără avatare descărcate sau pagini web încărcate în fundal." Style="{StaticResource Subtitle}" />
-          <Label Text="Pentru zero trafic Steam, alege Doar local din Acasă." Style="{StaticResource Subtitle}" FontSize="12" />
+    <VerticalStackLayout Padding="24,20,24,32" Spacing="26" MaximumWidthRequest="720" HorizontalOptions="Fill">
+      <VerticalStackLayout Spacing="5">
+        <Label Text="PREFERINȚELE TALE" Style="{StaticResource Eyebrow}" />
+        <Label Text="Setări" Style="{StaticResource Title}" />
+        <Label Text="Tot ce contează, în ritmul tău." Style="{StaticResource Subtitle}" />
+      </VerticalStackLayout>
+      <Border Style="{StaticResource Card}" Padding="18">
+        <VerticalStackLayout Spacing="9">
+          <HorizontalStackLayout Spacing="8"><Ellipse Fill="#56CFB1" WidthRequest="7" HeightRequest="7" VerticalOptions="Center" /><Label Text="Consum redus, implicit" FontFamily="BarlowSemiBold" FontSize="16" /></HorizontalStackLayout>
+          <Label Text="Avatarele se încarcă doar pentru prietenii afișați. Profilurile și imaginile jocurilor, doar când le deschizi. Încărcările se opresc când ieși din Prieteni." Style="{StaticResource Caption}" />
+          <Label Text="Pentru zero trafic Steam, alege Doar local din Acasă." Style="{StaticResource Caption}" />
         </VerticalStackLayout>
       </Border>
-      <Border Style="{StaticResource Card}">
-        <VerticalStackLayout Spacing="10">
-          <Label Text="Preferințe" FontSize="20" FontAttributes="Bold" />
-          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-            <Label Text="Anunță jocul când sunt invizibil" FontAttributes="Bold" VerticalOptions="Center" />
-            <Switch Grid.Column="1" IsToggled="{Binding AnnounceGameWhileInvisible}" SemanticProperties.Description="Trimite jocul către Steam cu status Invizibil; poate permite ore Steam" />
-          </Grid>
-          <Label Text="Opțional, doar pentru modul Invizibil. Poate permite ore Steam, dar trimite jocul către Steam. Invizibil controlează afișarea în lista de prieteni; istoricul profilului și celelalte sesiuni au setări separate. Oprit implicit." Style="{StaticResource Subtitle}" FontSize="12" />
-          <Label Text="Temă" Style="{StaticResource Subtitle}" /><Picker Title="Temă" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" />
-          <Label Text="Verifică aplicația la fiecare (secunde)" Style="{StaticResource Subtitle}" /><Picker Title="Interval" ItemsSource="{Binding Intervals}" SelectedItem="{Binding PollSeconds}" />
-          <Label Text="2 secunde oferă un echilibru bun. 5–10 secunde reduc verificările, dar schimbările de joc apar mai târziu." Style="{StaticResource Subtitle}" FontSize="12" />
-          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-            <Label Text="Păstrează conexiunea cu ecranul blocat" FontAttributes="Bold" VerticalOptions="Center" />
-            <Switch Grid.Column="1" IsToggled="{Binding KeepConnectionWhenLocked}" SemanticProperties.Description="Menține procesorul activ pentru conexiunea Steam cu ecranul blocat" />
-          </Grid>
-          <Label Text="Oprit: Android poate suspenda conexiunea pentru a economisi baterie. Pornit: procesorul rămâne activ, cu un consum mai mare. Jocurile nu sunt cronometrate cât ecranul este blocat." Style="{StaticResource Subtitle}" FontSize="12" />
-          <Button Text="Salvează preferințele" Command="{Binding SaveCommand}" />
-          <Label Text="{Binding SavedMessage}" Style="{StaticResource Subtitle}" />
-        </VerticalStackLayout>
-      </Border>
-      <Border Style="{StaticResource Card}">
-        <VerticalStackLayout Spacing="12">
-          <Label Text="Backup și transfer" FontSize="20" FontAttributes="Bold" />
-          <Label Text="Salvează mapările, preferințele și istoricul într-un fișier JSON. Parolele și tokenurile Steam rămân pe telefon." Style="{StaticResource Subtitle}" />
-          <Button Text="Exportă un fișier" Command="{Binding ExportCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
-          <Label Text="Downloads este locația inițială. Poți alege alt dosar sau furnizor de fișiere în selectorul Android." Style="{StaticResource Subtitle}" FontSize="12" />
-          <Button Text="Importă un fișier" Command="{Binding ImportCommand}" Style="{StaticResource Secondary}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
-          <Label Text="{Binding BackupMessage}" Style="{StaticResource Subtitle}" />
-          <Label Style="{StaticResource Error}" />
-          <ActivityIndicator IsVisible="{Binding IsBusy}" IsRunning="{Binding IsBusy}" />
-        </VerticalStackLayout>
-      </Border>
-      <Border Style="{StaticResource Card}">
-        <VerticalStackLayout Spacing="12">
-          <Label Text="Acces la utilizare" FontSize="19" FontAttributes="Bold" /><Label Text="{Binding UsageLabel}" Style="{StaticResource Subtitle}" />
-          <Button Text="Deschide accesul la utilizare" Command="{Binding UsageCommand}" Style="{StaticResource Secondary}" />
-          <BoxView HeightRequest="1" Color="{AppThemeBinding Light=#DFE8F0, Dark=#2D435A}" Margin="0,4" />
-          <Label Text="Baterie" FontSize="19" FontAttributes="Bold" /><Label Text="{Binding BatteryLabel}" Style="{StaticResource Subtitle}" />
-          <Button Text="Deschide optimizarea bateriei" Command="{Binding BatteryCommand}" Style="{StaticResource Secondary}" />
-          <Label Text="În lista Android, alege Steamphone și permite rularea fără restricții. Unele telefoane au și o setare separată de pornire automată." Style="{StaticResource Subtitle}" FontSize="12" />
-          <BoxView HeightRequest="1" Color="{AppThemeBinding Light=#DFE8F0, Dark=#2D435A}" Margin="0,4" />
-          <Label Text="Notificare persistentă" FontSize="19" FontAttributes="Bold" /><Label Text="{Binding NotificationLabel}" Style="{StaticResource Subtitle}" />
-          <Button Text="Deschide setările notificărilor" Command="{Binding NotificationsCommand}" Style="{StaticResource Secondary}" />
-        </VerticalStackLayout>
-      </Border>
+
+      <VerticalStackLayout Spacing="14">
+        <Label Text="Aspect și monitorizare" Style="{StaticResource SectionTitle}" />
+        <Border Style="{StaticResource Card}" Padding="18">
+          <VerticalStackLayout Spacing="18">
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+              <VerticalStackLayout Spacing="6"><Label Text="Temă" Style="{StaticResource Caption}" /><Border Style="{StaticResource Input}" Padding="8,0"><Picker Title="Temă" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" /></Border></VerticalStackLayout>
+              <VerticalStackLayout Grid.Column="1" Spacing="6"><Label Text="Detecție (secunde)" Style="{StaticResource Caption}" /><Border Style="{StaticResource Input}" Padding="8,0"><Picker Title="Interval" ItemsSource="{Binding Intervals}" SelectedItem="{Binding PollSeconds}" /></Border></VerticalStackLayout>
+            </Grid>
+            <Label Text="2 secunde: reacție rapidă. 5–10 secunde: mai puține verificări." Style="{StaticResource Caption}" />
+            <BoxView Style="{StaticResource Divider}" />
+            <VerticalStackLayout Spacing="5">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Label Text="Conexiune cu ecranul blocat" FontFamily="BarlowSemiBold" VerticalOptions="Center" />
+                <Switch Grid.Column="1" IsToggled="{Binding KeepConnectionWhenLocked}" SemanticProperties.Description="Menține conexiunea Steam cu ecranul blocat" />
+              </Grid>
+              <Label Text="Oprit implicit, pentru baterie. Pornit, menține procesorul activ și consumă mai mult. Timpul de joc se oprește la blocarea ecranului." Style="{StaticResource Caption}" />
+            </VerticalStackLayout>
+            <BoxView Style="{StaticResource Divider}" />
+            <VerticalStackLayout Spacing="5">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Label Text="Anunță jocul când sunt invizibil" FontFamily="BarlowSemiBold" VerticalOptions="Center" />
+                <Switch Grid.Column="1" IsToggled="{Binding AnnounceGameWhileInvisible}" SemanticProperties.Description="Trimite jocul către Steam cu status Invizibil" />
+              </Grid>
+              <Label Text="Opțional. Trimite jocul către Steam cu status Invizibil și poate permite înregistrarea orelor. Confidențialitatea profilului se configurează separat în Steam." Style="{StaticResource Caption}" />
+            </VerticalStackLayout>
+            <Button Text="Salvează preferințele" Command="{Binding SaveCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+            <Label Text="{Binding SavedMessage}" Style="{StaticResource Caption}" TextColor="{AppThemeBinding Light=#3C765B, Dark=#79D4B3}" />
+          </VerticalStackLayout>
+        </Border>
+      </VerticalStackLayout>
+
+      <VerticalStackLayout Spacing="14">
+        <Label Text="Permisiuni Android" Style="{StaticResource SectionTitle}" />
+        <Border Style="{StaticResource Card}" Padding="18">
+          <VerticalStackLayout Spacing="14">
+            <VerticalStackLayout Spacing="5">
+              <Label Text="Acces la utilizare" FontFamily="BarlowSemiBold" FontSize="16" />
+              <Label Text="{Binding UsageLabel}" Style="{StaticResource Caption}" />
+              <Button Text="Deschide accesul la utilizare  ↗" Command="{Binding UsageCommand}" Style="{StaticResource Secondary}" FontSize="13" />
+            </VerticalStackLayout>
+            <BoxView Style="{StaticResource Divider}" />
+            <VerticalStackLayout Spacing="5">
+              <Label Text="Baterie" FontFamily="BarlowSemiBold" FontSize="16" />
+              <Label Text="{Binding BatteryLabel}" Style="{StaticResource Caption}" />
+              <Button Text="Deschide optimizarea bateriei  ↗" Command="{Binding BatteryCommand}" Style="{StaticResource Secondary}" FontSize="13" />
+              <Label Text="Alege Steamphone în lista Android. Unele telefoane au și o setare de pornire automată." Style="{StaticResource Caption}" FontSize="11" />
+            </VerticalStackLayout>
+            <BoxView Style="{StaticResource Divider}" />
+            <VerticalStackLayout Spacing="5">
+              <Label Text="Notificarea de monitorizare" FontFamily="BarlowSemiBold" FontSize="16" />
+              <Label Text="{Binding NotificationLabel}" Style="{StaticResource Caption}" />
+              <Button Text="Deschide setările notificărilor  ↗" Command="{Binding NotificationsCommand}" Style="{StaticResource Secondary}" FontSize="13" />
+            </VerticalStackLayout>
+          </VerticalStackLayout>
+        </Border>
+      </VerticalStackLayout>
+
+      <VerticalStackLayout Spacing="14">
+        <Label Text="Backup și transfer" Style="{StaticResource SectionTitle}" />
+        <Border Style="{StaticResource Card}" Padding="18">
+          <VerticalStackLayout Spacing="14">
+            <Label Text="Ia cu tine aplicațiile asociate, preferințele și istoricul de joc." FontFamily="BarlowMedium" />
+            <Label Text="Fișier JSON. Parolele și sesiunea Steam rămân pe telefon." Style="{StaticResource Caption}" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+              <Button Text="Exportă  ↗" Command="{Binding ExportCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+              <Button Grid.Column="1" Text="Importă  ↙" Command="{Binding ImportCommand}" Style="{StaticResource Secondary}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+            </Grid>
+            <Label Text="La export, alege unde salvezi fișierul din selectorul Android." Style="{StaticResource Caption}" FontSize="11" />
+            <Label Text="{Binding BackupMessage}" Style="{StaticResource Subtitle}" />
+            <ActivityIndicator IsVisible="{Binding IsBusy}" IsRunning="{Binding IsBusy}" />
+          </VerticalStackLayout>
+        </Border>
+      </VerticalStackLayout>
       <Label Style="{StaticResource Error}" />
-      <Label Text="La blocarea ecranului, cronometrarea se oprește. Serviciul păstrează conexiunea cât permite sistemul și se reconectează automat după întreruperi. Un AppID schimbă jocul anunțat; Valve decide dacă îl afișează și dacă înregistrează ore în cont." Style="{StaticResource Subtitle}" FontSize="12" />
-      <Button Text="Deconectează și șterge sesiunea" Command="{Binding LogoutCommand}" Style="{StaticResource Secondary}" />
+      <BoxView Style="{StaticResource Divider}" />
+      <VerticalStackLayout Spacing="14">
+        <Label Text="Cont Steam" Style="{StaticResource SectionTitle}" />
+        <Label Text="Deconectarea elimină sesiunea salvată. Asocierile și istoricul rămân pe telefon." Style="{StaticResource Caption}" />
+        <Button Text="Deconectează contul" Command="{Binding LogoutCommand}" Style="{StaticResource Secondary}" TextColor="{AppThemeBinding Light=#AD3044, Dark=#F3A1AA}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+      </VerticalStackLayout>
+      <Label Text="STEAMPHONE / ANDROID" Style="{StaticResource Eyebrow}" FontSize="10" HorizontalOptions="Center" Margin="0,12,0,0" />
     </VerticalStackLayout>
   </ScrollView>
 </ContentPage>

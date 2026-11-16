@@ -4,13 +4,48 @@
              xmlns:vm="clr-namespace:Steamphone.ViewModels"
              xmlns:core="clr-namespace:Steamphone.Core;assembly=Steamphone.Core"
              x:Class="Steamphone.Views.StatsPage" x:DataType="vm:StatsViewModel" Title="Statistici">
-  <Grid Padding="20" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="18" MaximumWidthRequest="680" HorizontalOptions="Fill">
-    <VerticalStackLayout Spacing="6"><Label Text="Timpul tău de joc" Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" /><Label Text="Istoric păstrat pe acest telefon." Style="{StaticResource Subtitle}" /></VerticalStackLayout>
-    <Border Grid.Row="1" Style="{StaticResource Card}"><VerticalStackLayout Spacing="8"><Label Text="TOTAL ÎNREGISTRAT" Style="{StaticResource Eyebrow}" /><Label Text="{Binding TotalTime}" FontSize="28" FontFamily="sans-serif-condensed" FontAttributes="Bold" /><Label Text="Timp salvat pe telefon în toate modurile de vizibilitate. Sesiunile active se salvează la fiecare 10 secunde și la închiderea jocului." Style="{StaticResource Subtitle}" FontSize="12" /></VerticalStackLayout></Border>
-    <VerticalStackLayout Grid.Row="2" Spacing="6"><Label Style="{StaticResource Error}" /><Button Text="Actualizează" Command="{Binding ReloadCommand}" Style="{StaticResource Secondary}" /></VerticalStackLayout>
+  <Grid Padding="24,20,24,8" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="20" MaximumWidthRequest="720" HorizontalOptions="Fill">
+    <VerticalStackLayout Spacing="5">
+      <Label Text="ISTORIC LOCAL" Style="{StaticResource Eyebrow}" />
+      <Label Text="Timp de joc" Style="{StaticResource Title}" />
+      <Label Text="Fiecare sesiune, păstrată pe telefon." Style="{StaticResource Subtitle}" />
+    </VerticalStackLayout>
+    <Border Grid.Row="1" Style="{StaticResource Card}" Padding="20">
+      <VerticalStackLayout Spacing="12">
+        <Label Text="TOTAL ÎNREGISTRAT" Style="{StaticResource Eyebrow}" FontSize="10" />
+        <Label Text="{Binding TotalTime}" FontFamily="Display" FontSize="32" />
+        <BoxView Style="{StaticResource Divider}" />
+        <Grid ColumnDefinitions="*,Auto"><Label Text="Jocuri în istoric" Style="{StaticResource Caption}" /><Label Grid.Column="1" Text="{Binding Games.Count}" Style="{StaticResource Data}" /></Grid>
+      </VerticalStackLayout>
+    </Border>
+    <VerticalStackLayout Grid.Row="2" Spacing="4">
+      <Grid ColumnDefinitions="*,Auto"><Label Text="JOCURILE TALE" Style="{StaticResource Eyebrow}" FontSize="10" VerticalOptions="Center" /><Button Grid.Column="1" Text="Actualizează ↻" Command="{Binding ReloadCommand}" Style="{StaticResource Quiet}" FontSize="12" Padding="8,10" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" /></Grid>
+      <Label Style="{StaticResource Error}" /><ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+    </VerticalStackLayout>
     <CollectionView Grid.Row="3" ItemsSource="{Binding Games}" SelectionMode="None">
-      <CollectionView.EmptyView><Label Text="Adaugă o mapare și deschide aplicația. Timpul de joc va apărea aici." Style="{StaticResource Subtitle}" Margin="12,24" /></CollectionView.EmptyView>
-      <CollectionView.ItemTemplate><DataTemplate x:DataType="core:GameTotal"><Border Style="{StaticResource Card}" Margin="0,0,0,12"><VerticalStackLayout Spacing="6"><Label Text="{Binding DisplayName}" FontSize="20" FontAttributes="Bold" /><Label Text="{Binding DurationLabel}" FontSize="18" TextColor="{AppThemeBinding Light=#176BA4, Dark=#66C0F4}" /><Label Text="{Binding AppIdLabel}" Style="{StaticResource Subtitle}" FontSize="12" /></VerticalStackLayout></Border></DataTemplate></CollectionView.ItemTemplate>
+      <CollectionView.EmptyView>
+        <VerticalStackLayout Spacing="14" Padding="0,28">
+          <Image Source="history_empty.png" WidthRequest="72" HeightRequest="72" HorizontalOptions="Start" />
+          <Label Text="Următoarea sesiune începe cu tine" Style="{StaticResource SectionTitle}" />
+          <Label Text="Asociază o aplicație, pornește monitorizarea și joacă. Timpul înregistrat va apărea aici." Style="{StaticResource Subtitle}" />
+        </VerticalStackLayout>
+      </CollectionView.EmptyView>
+      <CollectionView.ItemTemplate>
+        <DataTemplate x:DataType="core:GameTotal">
+          <VerticalStackLayout Spacing="12" Padding="0,16,0,0">
+            <Grid ColumnDefinitions="3,*" ColumnSpacing="14">
+              <BoxView Color="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" />
+              <VerticalStackLayout Grid.Column="1" Spacing="7">
+                <Label Text="{Binding DisplayName}" FontFamily="BarlowSemiBold" FontSize="18" MaxLines="2" />
+                <Label Text="{Binding DurationLabel}" FontFamily="BarlowMedium" FontSize="16" TextColor="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" />
+                <Label Text="{Binding AppIdLabel}" Style="{StaticResource Data}" FontSize="10" />
+              </VerticalStackLayout>
+            </Grid>
+            <BoxView Style="{StaticResource Divider}" />
+          </VerticalStackLayout>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+      <CollectionView.Footer><Label Text="Timp local, în toate modurile de vizibilitate. Steam gestionează separat orele din cont." Style="{StaticResource Caption}" Margin="0,24,0,16" /></CollectionView.Footer>
     </CollectionView>
   </Grid>
 </ContentPage>

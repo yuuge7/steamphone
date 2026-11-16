@@ -46,4 +46,23 @@ public partial class FriendsPage : ContentPage
     {
         visible = true; viewModel.Activate();
     }
+    private async void OnRosterScrolled(object? sender, ItemsViewScrolledEventArgs args) =>
+        await viewModel.LoadVisibleAvatarsAsync(args.FirstVisibleItemIndex, args.LastVisibleItemIndex);
+    protected override void OnSizeAllocated(double width, double height)
+    {
+        base.OnSizeAllocated(width, height);
+        if (StatsStrip is null) return;
+        var compact = height < 650;
+        StatsStrip.IsVisible = !compact;
+        CommunityEyebrow.IsVisible = !compact;
+        CompactSummary.IsVisible = compact;
+        RosterHeading.Spacing = compact ? 8 : 16;
+        RosterLayout.RowSpacing = compact ? 10 : 14;
+    }
+    protected override bool OnBackButtonPressed()
+    {
+        if (!viewModel.HasSelectedFriend) return base.OnBackButtonPressed();
+        viewModel.CloseFriendCommand.Execute(null);
+        return true;
+    }
 }

@@ -4,30 +4,48 @@
              xmlns:vm="clr-namespace:Steamphone.ViewModels"
              xmlns:core="clr-namespace:Steamphone.Core;assembly=Steamphone.Core"
              x:Class="Steamphone.Views.MappingsPage" x:DataType="vm:MappingsViewModel" Title="Mapări">
-  <Grid Padding="20" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="16" MaximumWidthRequest="680" HorizontalOptions="Fill">
-    <VerticalStackLayout Spacing="6">
-      <Label Text="Aplicație → joc Steam" Style="{StaticResource Title}" SemanticProperties.HeadingLevel="Level1" />
-      <Label Text="Asociază aplicațiile de pe telefon. Modul din Acasă decide dacă jocul este anunțat pe Steam." Style="{StaticResource Subtitle}" />
+  <Grid Padding="24,20,24,16" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="20" MaximumWidthRequest="720" HorizontalOptions="Fill">
+    <VerticalStackLayout Spacing="5">
+      <Label Text="ANDROID → STEAM" Style="{StaticResource Eyebrow}" />
+      <Label Text="Jocurile tale" Style="{StaticResource Title}" />
+      <Label Text="O aplicație pe telefon. Un joc pe Steam." Style="{StaticResource Subtitle}" />
     </VerticalStackLayout>
-    <Button Grid.Row="1" Text="Adaugă o mapare" Command="{Binding AddCommand}" />
-    <VerticalStackLayout Grid.Row="2"><Label Style="{StaticResource Error}" /><ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" /></VerticalStackLayout>
+    <Button Grid.Row="1" Text="Asociază o aplicație  +" Command="{Binding AddCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+    <VerticalStackLayout Grid.Row="2" Spacing="8">
+      <Grid ColumnDefinitions="*,Auto"><Label Text="APLICAȚII ASOCIATE" Style="{StaticResource Eyebrow}" FontSize="10" /><Label Grid.Column="1" Text="{Binding Mappings.Count}" Style="{StaticResource Data}" /></Grid>
+      <Label Style="{StaticResource Error}" /><ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+    </VerticalStackLayout>
     <CollectionView Grid.Row="3" ItemsSource="{Binding Mappings}" SelectionMode="None">
-      <CollectionView.EmptyView><VerticalStackLayout Padding="12,32" Spacing="12"><Label Text="Prima legătură începe aici" FontSize="23" FontAttributes="Bold" /><Label Text="Adaugă o mapare, selectează aplicația instalată și introdu AppID-ul jocului Steam." Style="{StaticResource Subtitle}" /></VerticalStackLayout></CollectionView.EmptyView>
+      <CollectionView.EmptyView>
+        <VerticalStackLayout Padding="0,32" Spacing="14">
+          <Image Source="mapping_empty.png" WidthRequest="72" HeightRequest="72" HorizontalOptions="Start" />
+          <Label Text="Prima legătură începe aici" Style="{StaticResource SectionTitle}" />
+          <Label Text="Alege o aplicație instalată și introdu AppID-ul jocului Steam pe care vrei să-l afișezi." Style="{StaticResource Subtitle}" />
+          <Label Text="Găsești AppID-ul în adresa paginii jocului din magazinul Steam." Style="{StaticResource Caption}" />
+        </VerticalStackLayout>
+      </CollectionView.EmptyView>
       <CollectionView.ItemTemplate>
         <DataTemplate x:DataType="core:AppMapping">
-          <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-            <VerticalStackLayout Spacing="8">
-              <Label Text="{Binding DisplayName}" FontSize="20" FontAttributes="Bold" />
-              <Label Text="{Binding AppIdLabel}" Style="{StaticResource Subtitle}" />
-              <Label Text="Mapare dezactivată" TextColor="{AppThemeBinding Light=#946000, Dark=#E9C477}" IsVisible="{Binding Enabled, Converter={StaticResource Not}}" />
-              <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                <Button Text="Editează" Style="{StaticResource Secondary}" Command="{Binding EditCommand, Source={RelativeSource AncestorType={x:Type vm:MappingsViewModel}}, x:DataType=vm:MappingsViewModel}" CommandParameter="{Binding .}" />
-                <Button Grid.Column="1" Text="Șterge" Style="{StaticResource Secondary}" Command="{Binding DeleteCommand, Source={RelativeSource AncestorType={x:Type vm:MappingsViewModel}}, x:DataType=vm:MappingsViewModel}" CommandParameter="{Binding .}" />
+          <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,0,12">
+            <VerticalStackLayout Spacing="12">
+              <Grid ColumnDefinitions="40,*" ColumnSpacing="12">
+                <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#E7EEF3, Dark=#223140}" StrokeShape="RoundRectangle 10" WidthRequest="40" HeightRequest="40" Padding="10" VerticalOptions="Start"><Image Source="mappings.png" Aspect="AspectFit" /></Border>
+                <VerticalStackLayout Grid.Column="1" Spacing="5">
+                  <Label Text="{Binding DisplayName}" FontFamily="BarlowSemiBold" FontSize="18" MaxLines="2" />
+                  <Label Text="{Binding AppIdLabel}" Style="{StaticResource Data}" FontSize="11" />
+                  <Label Text="Dezactivată" TextColor="{AppThemeBinding Light=#91601B, Dark=#DFBB7A}" IsVisible="{Binding Enabled, Converter={StaticResource Not}}" FontSize="12" />
+                </VerticalStackLayout>
+              </Grid>
+              <BoxView Style="{StaticResource Divider}" />
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Button Text="Editează asocierea" Style="{StaticResource Quiet}" FontSize="13" Padding="4,10" Command="{Binding EditCommand, Source={RelativeSource AncestorType={x:Type vm:MappingsViewModel}}, x:DataType=vm:MappingsViewModel}" CommandParameter="{Binding .}" />
+                <Button Grid.Column="1" Text="Șterge" Style="{StaticResource Quiet}" TextColor="{AppThemeBinding Light=#AD3044, Dark=#F3A1AA}" FontSize="13" Padding="4,10" Command="{Binding DeleteCommand, Source={RelativeSource AncestorType={x:Type vm:MappingsViewModel}}, x:DataType=vm:MappingsViewModel}" CommandParameter="{Binding .}" />
               </Grid>
             </VerticalStackLayout>
           </Border>
         </DataTemplate>
       </CollectionView.ItemTemplate>
+      <CollectionView.Footer><Label Text="Vizibilitatea jocului se alege din Acasă." Style="{StaticResource Caption}" Margin="0,16" /></CollectionView.Footer>
     </CollectionView>
   </Grid>
 </ContentPage>

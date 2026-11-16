@@ -14,6 +14,30 @@ public class MainActivity : MauiAppCompatActivity
     private const int BackupRequest = 17041;
     private TaskCompletionSource<global::Android.Net.Uri?>? pendingDocument;
 
+    protected override void OnCreate(Bundle? savedInstanceState)
+    {
+        base.OnCreate(savedInstanceState);
+        if (Microsoft.Maui.Controls.Application.Current is { } app) app.RequestedThemeChanged += OnThemeChanged;
+        ApplySystemBars();
+    }
+
+    private void OnThemeChanged(object? sender, Microsoft.Maui.Controls.AppThemeChangedEventArgs args) => ApplySystemBars();
+    private void ApplySystemBars()
+    {
+        if (Window is not { } window) return;
+        var controller = AndroidX.Core.View.WindowCompat.GetInsetsController(window, window.DecorView);
+        if (controller is null) return;
+        var light = Microsoft.Maui.Controls.Application.Current?.RequestedTheme != Microsoft.Maui.ApplicationModel.AppTheme.Dark;
+        controller.AppearanceLightStatusBars = light;
+        controller.AppearanceLightNavigationBars = light;
+    }
+
+    protected override void OnDestroy()
+    {
+        if (Microsoft.Maui.Controls.Application.Current is { } app) app.RequestedThemeChanged -= OnThemeChanged;
+        base.OnDestroy();
+    }
+
     public Task<global::Android.Net.Uri?> ChooseBackupDocumentAsync(Intent intent)
     {
         if (pendingDocument is not null) throw new InvalidOperationException("Există deja un selector de fișiere deschis.");
