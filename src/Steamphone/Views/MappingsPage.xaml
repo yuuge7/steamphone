@@ -25,14 +25,14 @@
         </VerticalStackLayout>
       </CollectionView.EmptyView>
       <CollectionView.ItemTemplate>
-        <DataTemplate x:DataType="core:AppMapping">
+        <DataTemplate x:DataType="vm:MappingRowViewModel">
           <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,0,12">
             <VerticalStackLayout Spacing="12">
               <Grid ColumnDefinitions="40,*" ColumnSpacing="12">
                 <Border StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#E7EEF3, Dark=#223140}" StrokeShape="RoundRectangle 10" WidthRequest="40" HeightRequest="40" Padding="10" VerticalOptions="Start"><Image Source="mappings.png" Aspect="AspectFit" /></Border>
                 <VerticalStackLayout Grid.Column="1" Spacing="5">
                   <Label Text="{Binding DisplayName}" FontFamily="BarlowSemiBold" FontSize="18" MaxLines="2" />
-                  <Label Text="{Binding AppIdLabel}" Style="{StaticResource Data}" FontSize="11" />
+                  <Label Text="{Binding SteamGameName}" Style="{StaticResource Caption}" FontSize="13" MaxLines="2" LineBreakMode="TailTruncation" />
                   <Label Text="Dezactivată" TextColor="{AppThemeBinding Light=#91601B, Dark=#DFBB7A}" IsVisible="{Binding Enabled, Converter={StaticResource Not}}" FontSize="12" />
                 </VerticalStackLayout>
               </Grid>

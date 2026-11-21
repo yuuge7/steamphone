@@ -9,6 +9,7 @@
       <VerticalStackLayout Spacing="8">
         <Label Text="{Binding SelectedLabel}" FontFamily="BarlowSemiBold" FontSize="17" MaxLines="1" LineBreakMode="TailTruncation" />
         <Border Style="{StaticResource Input}"><Entry Text="{Binding SteamAppId}" Keyboard="Numeric" Placeholder="Steam AppID · de exemplu 570" MaxLength="10" SemanticProperties.Description="Steam AppID" /></Border>
+        <Label Text="{Binding SteamGameName}" Style="{StaticResource Subtitle}" FontFamily="BarlowMedium" MaxLines="2" LineBreakMode="TailTruncation" SemanticProperties.Description="{Binding SteamGameName}" />
         <Grid ColumnDefinitions="*,Auto"><Label Text="Asociere activă" VerticalOptions="Center" FontSize="14" /><Switch Grid.Column="1" IsToggled="{Binding Enabled}" SemanticProperties.Description="Activează maparea" /></Grid>
       </VerticalStackLayout>
     </Border>

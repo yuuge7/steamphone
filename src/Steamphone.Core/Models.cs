@@ -12,7 +12,6 @@ public sealed class AppMapping
     public string DisplayName { get; set; } = "";
     public long SteamAppId { get; set; }
     public bool Enabled { get; set; } = true;
-    [Ignore] public string AppIdLabel => $"Steam AppID {SteamAppId}";
 }
 
 [Table("PlaytimeStats")]
@@ -43,7 +42,6 @@ public sealed class AppSettings
 public sealed record GameTotal(string PackageName, string DisplayName, long SteamAppId, long DurationTicks)
 {
     public string DurationLabel => FormatDuration(TimeSpan.FromTicks(DurationTicks));
-    public string AppIdLabel => $"Steam AppID {SteamAppId}";
     public static string FormatDuration(TimeSpan duration)
     {
         if (duration.TotalMinutes < 1)

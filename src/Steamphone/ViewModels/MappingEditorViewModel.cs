@@ -6,17 +6,44 @@ using Steamphone.Services;
 
 namespace Steamphone.ViewModels;
 
-public partial class MappingEditorViewModel(AppDatabase database, IDeviceServices device, AppNavigator navigator) : BaseViewModel
+public partial class MappingEditorViewModel(AppDatabase database, IDeviceServices device, AppNavigator navigator, SteamGameCatalog catalog) : BaseViewModel
 {
+    private CancellationTokenSource? nameLookup;
     private IReadOnlyList<InstalledApp> allApps = [];
     private AppMapping? original;
     [ObservableProperty] private string searchText = "";
     [ObservableProperty] private InstalledApp? selectedApp;
     [ObservableProperty] private string steamAppId = "";
+    [ObservableProperty] private string steamGameName = "Introdu ID-ul pentru a vedea jocul Steam.";
     [ObservableProperty] private bool enabled = true;
     [ObservableProperty] private bool showSystemApps;
     [ObservableProperty] private string selectedLabel = "Selectează o aplicație din listă";
     public ObservableCollection<InstalledApp> Apps { get; } = [];
+    public void Deactivate() { nameLookup?.Cancel(); nameLookup?.Dispose(); nameLookup = null; }
+
+    partial void OnSteamAppIdChanged(string value)
+    {
+        Deactivate();
+        if (!uint.TryParse(value.Trim(), out var id) || id == 0)
+        {
+            SteamGameName = "Introdu ID-ul pentru a vedea jocul Steam.";
+            return;
+        }
+        nameLookup = new();
+        SteamGameName = "Se încarcă numele jocului…";
+        _ = ResolveNameAsync(id, nameLookup.Token);
+    }
+    private async Task ResolveNameAsync(uint id, CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(350, token);
+            var name = await catalog.GetNameAsync(id, token);
+            if (!token.IsCancellationRequested) SteamGameName = name ?? "Joc negăsit. Verifică ID-ul sau conexiunea.";
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception) { if (!token.IsCancellationRequested) SteamGameName = "Numele jocului nu este disponibil."; }
+    }
 
     public Task InitializeAsync(AppMapping? mapping) => PerformAsync(async () =>
     {

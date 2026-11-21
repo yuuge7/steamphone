@@ -30,6 +30,8 @@ public static class MauiProgram
         });
         builder.Services.AddSingleton(_ => new SteamImageCache(new HttpClient(), Path.Combine(FileSystem.CacheDirectory, "steam-social")));
         builder.Services.AddSingleton(_ => new AppDatabase(Path.Combine(FileSystem.AppDataDirectory, "steamphone.db3")));
+        builder.Services.AddSingleton(sp => new SteamGameCatalog(new HttpClient { MaxResponseContentBufferSize = 256 * 1024 },
+            sp.GetRequiredService<AppDatabase>()));
         builder.Services.AddSingleton<ICredentialStore, SecureCredentialStore>();
         builder.Services.AddSingleton<SteamGuardBroker>();
         builder.Services.AddSingleton(sp =>

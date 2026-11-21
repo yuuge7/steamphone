@@ -12,6 +12,7 @@ The interface currently uses Romanian. Source code, build tooling, and this cont
 - Persistent login through Android-backed SecureStorage; passwords are never saved.
 - Installed-app selector with actual display names and icons, search, and optional system apps.
 - Editable app-to-AppID mappings and Online / Away / Busy / Snooze / Offline idle status.
+- Steam game titles in mappings and statistics, with a name preview while entering an AppID.
 - Independent Public, Invisible, Online with game hidden, and fully Local visibility modes.
 - A live friends hub with game activity, search, filters, profiles, and Steam store/library shortcuts.
 - Foreground service with a persistent notification, stop action, and reconnect backoff.
@@ -33,6 +34,8 @@ Open the repository's **Releases** page and download the **arm64** APK for most 
 6. Start monitoring from **Acasă**, then open the mapped app. Return to the launcher or another app to restore the selected idle status.
 
 In **Joc vizibil**, a mapped game uses Online while active. The selected idle status applies after leaving the game. Locking the screen stops local playtime accounting. The notification's **Oprește** action stops the service. Signing out removes the Steam session while retaining mappings and local history.
+
+Mappings and statistics show the actual Steam game title alongside the Android app name. Titles are looked up from the public Steam store, cached on the phone for seven days, and reused offline. The editor previews the title as you enter an AppID. Missing titles stay unavailable rather than showing a guessed name. Lookups need no Steam login or API key, stop when leaving the page, and use a five-second deadline. **Doar local** uses cached titles without making lookup requests. This derived cache does not change mapping IDs, recorded playtime, or backup format.
 
 ### Visibility and the friends hub
 

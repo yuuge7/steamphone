@@ -30,6 +30,7 @@ public sealed class AppDatabase
         await connection.CreateTableAsync<AppMapping>();
         await connection.CreateTableAsync<PlaytimeStats>();
         await connection.CreateTableAsync<AppSettings>();
+        await connection.CreateTableAsync<SteamGameTitle>();
         await connection.ExecuteAsync("PRAGMA user_version = 1");
     }
 
@@ -37,6 +38,22 @@ public sealed class AppDatabase
     {
         await initialize.Value;
         return await connection.Table<AppMapping>().OrderBy(x => x.DisplayName).ToListAsync();
+    }
+
+    public async Task<List<SteamGameTitle>> GetSteamGameTitlesAsync()
+    {
+        await initialize.Value;
+        return await connection.Table<SteamGameTitle>().ToListAsync();
+    }
+    public async Task<SteamGameTitle?> GetSteamGameTitleAsync(uint appId)
+    {
+        await initialize.Value;
+        return await connection.FindAsync<SteamGameTitle>(appId);
+    }
+    public async Task SaveSteamGameTitleAsync(SteamGameTitle title)
+    {
+        await initialize.Value;
+        await connection.InsertOrReplaceAsync(title);
     }
 
     public async Task SaveMappingAsync(AppMapping mapping)
