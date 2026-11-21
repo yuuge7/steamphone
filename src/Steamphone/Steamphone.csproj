@@ -15,6 +15,9 @@
     <PublishTrimmed>false</PublishTrimmed>
     <RunAOTCompilation>false</RunAOTCompilation>
     <AndroidLinkMode>None</AndroidLinkMode>
+    <!-- .NET Android's generated JNI lookup can break Release startup after an incremental build.
+         Use runtime registration until dotnet/maui#34476 is resolved. -->
+    <AndroidEnableMarshalMethods>false</AndroidEnableMarshalMethods>
     <MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
     <JavaSdkDirectory Condition="'$(JavaSdkDirectory)' == '' and Exists('$(LOCALAPPDATA)/Microsoft/jdk-21/bin/javac.exe')">$(LOCALAPPDATA)/Microsoft/jdk-21</JavaSdkDirectory>
   </PropertyGroup>

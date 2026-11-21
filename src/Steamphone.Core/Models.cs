@@ -44,9 +44,19 @@ public sealed record GameTotal(string PackageName, string DisplayName, long Stea
 {
     public string DurationLabel => FormatDuration(TimeSpan.FromTicks(DurationTicks));
     public string AppIdLabel => $"Steam AppID {SteamAppId}";
-    public static string FormatDuration(TimeSpan duration) => duration.TotalMinutes < 1
-        ? $"{Math.Max(0, (int)duration.TotalSeconds)} secunde"
-        : $"{(long)duration.TotalHours} ore și {duration.Minutes} minute";
+    public static string FormatDuration(TimeSpan duration)
+    {
+        if (duration.TotalMinutes < 1)
+        {
+            var seconds = Math.Max(0, (int)duration.TotalSeconds);
+            return $"{seconds} {(seconds == 1 ? "secundă" : "secunde")}";
+        }
+        var hours = (long)duration.TotalHours;
+        var minutes = duration.Minutes;
+        var hourLabel = $"{hours} {(hours == 1 ? "oră" : "ore")}";
+        var minuteLabel = $"{minutes} {(minutes == 1 ? "minut" : "minute")}";
+        return hours == 0 ? minuteLabel : minutes == 0 ? hourLabel : $"{hourLabel} și {minuteLabel}";
+    }
 }
 
 public sealed record SavedAccount(string Username, string RefreshToken, string? GuardData);

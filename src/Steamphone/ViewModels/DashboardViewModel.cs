@@ -21,7 +21,7 @@ public partial class DashboardViewModel : BaseViewModel
     [ObservableProperty] private string monitorMessage = "Monitorizarea este oprită";
     [ObservableProperty] private bool isRunning;
     [ObservableProperty] private bool needsLogin;
-    [ObservableProperty] private bool isConnected;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ConnectionLabel))] private bool isConnected;
     [ObservableProperty] private string totalTime = "0 ore și 0 minute";
     [ObservableProperty] private int mappingCount;
     [ObservableProperty] private BaseStatus selectedStatus;
@@ -34,6 +34,7 @@ public partial class DashboardViewModel : BaseViewModel
     public bool IsPrivate => !IsPublic;
     public bool IsLocalOnly => SelectedVisibility == VisibilityMode.LocalOnly;
     public bool ShowSignIn => !IsConnected && !IsLocalOnly;
+    public string ConnectionLabel => IsConnected ? "CONECTAT" : "DECONECTAT";
     public string ModeLabel => SelectedVisibility switch
     {
         VisibilityMode.Invisible => "INVIZIBIL", VisibilityMode.OnlineOnly => "ONLINE · JOC ASCUNS",

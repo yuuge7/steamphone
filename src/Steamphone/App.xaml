@@ -8,6 +8,7 @@
       <local:InverseBoolConverter x:Key="Not" />
       <Color x:Key="Navy">#101720</Color>
       <Color x:Key="SteamBlue">#73C7E8</Color>
+      <!-- Shared rhythm: 24dp page gutter, 16dp sections, 12dp controls, 48dp touch targets. -->
       <Style TargetType="ContentPage" ApplyToDerivedTypes="True">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F3F6F8, Dark=#101720}" />
         <Setter Property="Shell.NavBarIsVisible" Value="False" />
@@ -19,7 +20,7 @@
       </Style>
       <Style x:Key="Title" TargetType="Label">
         <Setter Property="FontFamily" Value="Display" />
-        <Setter Property="FontSize" Value="36" />
+        <Setter Property="FontSize" Value="32" />
         <Setter Property="LineHeight" Value="1.05" />
         <Setter Property="SemanticProperties.HeadingLevel" Value="Level1" />
       </Style>
@@ -33,13 +34,13 @@
       </Style>
       <Style x:Key="Eyebrow" TargetType="Label">
         <Setter Property="FontFamily" Value="BarlowSemiBold" />
-        <Setter Property="FontSize" Value="11" />
-        <Setter Property="CharacterSpacing" Value="1.8" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="CharacterSpacing" Value="1.4" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light=#3D6F86, Dark=#8CB2C6}" />
       </Style>
       <Style x:Key="SectionTitle" TargetType="Label">
         <Setter Property="FontFamily" Value="BarlowSemiBold" />
-        <Setter Property="FontSize" Value="19" />
+        <Setter Property="FontSize" Value="18" />
         <Setter Property="SemanticProperties.HeadingLevel" Value="Level2" />
       </Style>
       <Style x:Key="Data" TargetType="Label">
@@ -48,11 +49,21 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light=#536779, Dark=#96A8B9}" />
       </Style>
       <Style x:Key="Card" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#19232E}" />
-        <Setter Property="Stroke" Value="{AppThemeBinding Light=#DBE4EA, Dark=#2A3947}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#18232F}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light=#D9E2E9, Dark=#2B3B4B}" />
         <Setter Property="StrokeThickness" Value="1" />
-        <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 14" />
         <Setter Property="Padding" Value="20" />
+      </Style>
+      <Style x:Key="StatusBadge" TargetType="Border" BasedOn="{StaticResource Card}">
+        <Setter Property="StrokeShape" Value="RoundRectangle 8" />
+        <Setter Property="Padding" Value="10,7" />
+      </Style>
+      <Style x:Key="SegmentedControl" TargetType="Border" BasedOn="{StaticResource Card}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#E9EFF3, Dark=#14202C}" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="Padding" Value="4" />
       </Style>
       <Style x:Key="Input" TargetType="Border" BasedOn="{StaticResource Card}">
         <Setter Property="Padding" Value="12,0" />
@@ -65,7 +76,7 @@
       <Style TargetType="Button">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light=White, Dark=#102532}" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="10" />
         <Setter Property="FontFamily" Value="BarlowSemiBold" />
         <Setter Property="FontSize" Value="15" />
         <Setter Property="MinimumHeightRequest" Value="50" />
@@ -82,7 +93,7 @@
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#E7EEF3, Dark=#223140}" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light=#225D77, Dark=#CCE0ED}" />
         <Setter Property="FontFamily" Value="BarlowSemiBold" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="10" />
         <Setter Property="MinimumHeightRequest" Value="50" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Padding" Value="14,12" />
@@ -92,7 +103,7 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" />
       </Style>
       <Style x:Key="Filter" TargetType="Button" BasedOn="{StaticResource Quiet}">
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Padding" Value="6,10" />
         <Setter Property="MinimumHeightRequest" Value="48" />
         <Setter Property="FontSize" Value="13" />

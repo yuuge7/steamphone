@@ -13,6 +13,10 @@ public partial class FriendsViewModel(SteamConnection steam, AppDatabase databas
     private bool active;
     private CancellationTokenSource? viewLifetime;
     private CancellationTokenSource? detailLifetime;
+    private CancellationTokenSource? imageWindow;
+    private CancellationTokenSource? loadWindow;
+    private bool warmingAvatars;
+    private CancellationToken warmingToken;
     private readonly Dictionary<ulong, FriendRowViewModel> rows = [];
     private int firstVisible;
     private int lastVisible = 9;
@@ -36,9 +40,13 @@ public partial class FriendsViewModel(SteamConnection steam, AppDatabase databas
     [ObservableProperty] private string profileMemberSince = "";
     [ObservableProperty] private string profileMessage = "";
     [ObservableProperty] private string? gameArtwork;
+    [ObservableProperty] private bool loadExpired;
+    [ObservableProperty] private string loadMessage = "";
+    [ObservableProperty] private double loadFraction;
     public bool ShowConnect => !IsConnected && !IsLocalOnly;
     public bool HasFriends => Friends.Count > 0;
-    public bool IsWaiting => IsConnected && !steam.FriendsReady;
+    public bool IsWaiting => IsConnected && !LoadExpired && (!steam.FriendsReady || steam.FriendsLoadedCount < FriendCount);
+    public bool CanRetryLoad => IsConnected && !IsWaiting;
     public bool HasSelectedFriend => SelectedFriend is not null;
     public bool HasProfileName => ProfileName.Length > 0;
     public bool HasProfileLocation => ProfileLocation.Length > 0;
@@ -67,6 +75,8 @@ public partial class FriendsViewModel(SteamConnection steam, AppDatabase databas
         monitor.Changed -= OnMonitorChanged;
         steam.SetFriendsViewActive(false);
         CloseFriend();
+        imageWindow?.Cancel(); imageWindow?.Dispose(); imageWindow = null;
+        loadWindow?.Cancel(); loadWindow?.Dispose(); loadWindow = null;
         viewLifetime?.Cancel();
         viewLifetime?.Dispose();
         viewLifetime = null;
@@ -74,6 +84,7 @@ public partial class FriendsViewModel(SteamConnection steam, AppDatabase databas
         rows.Clear();
         profiles.Clear();
         Friends.Clear();
+        IsConnected = false;
         Interlocked.Exchange(ref dirty, 0);
     }
     private void MarkDirty()
@@ -93,7 +104,16 @@ public partial class FriendsViewModel(SteamConnection steam, AppDatabase databas
     });
     partial void OnSearchChanged(string value) { firstVisible = 0; lastVisible = 9; RenderRoster(); }
     partial void OnFilterChanged(string value) { firstVisible = 0; lastVisible = 9; RenderRoster(); }
-    partial void OnIsConnectedChanged(bool value) => OnPropertyChanged(nameof(ConnectionBadge));
+    partial void OnIsConnectedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ConnectionBadge));
+        if (value) StartLoadWindow();
+        else
+        {
+            imageWindow?.Cancel();
+            loadWindow?.Cancel();
+        }
+    }
     partial void OnSelectedFriendChanged(FriendRowViewModel? value) => OnPropertyChanged(nameof(HasSelectedFriend));
     partial void OnProfileNameChanged(string value) => OnPropertyChanged(nameof(HasProfileName));
     partial void OnProfileLocationChanged(string value) => OnPropertyChanged(nameof(HasProfileLocation));
@@ -109,6 +129,11 @@ public partial class FriendsViewModel(SteamConnection steam, AppDatabase databas
         PlayingCount = roster.Count(x => x.IsPlaying);
         OnlineCount = roster.Count(x => x.IsOnline);
         FriendCount = roster.Count;
+        var loaded = steam.FriendsLoadedCount;
+        LoadFraction = FriendCount == 0 ? 0 : Math.Clamp((double)loaded / FriendCount, 0, 1);
+        LoadMessage = IsWaiting ? FriendCount == 0 ? "Se încarcă lista Steam…" : $"Se încarcă activitatea · {loaded}/{FriendCount}"
+            : LoadExpired && (!steam.FriendsReady || loaded < FriendCount) ? "Steam răspunde lent. Reîncearcă pentru detaliile lipsă."
+            : IsConnected ? $"{FriendCount} prieteni · activitate actualizată" : ConnectionMessage;
         var ids = roster.Select(x => x.SteamId).ToHashSet();
         foreach (var id in rows.Keys.Where(x => !ids.Contains(x)).ToArray()) rows.Remove(id);
         if (SelectedFriend is { } selected && !ids.Contains(selected.Friend.SteamId)) CloseFriend();
@@ -135,29 +160,89 @@ public partial class FriendsViewModel(SteamConnection steam, AppDatabase databas
             row.Section = section != previousSection ? section : "";
             previousSection = section;
         }
-        if (!Friends.SequenceEqual(visible))
-        {
-            Friends.Clear();
-            foreach (var row in visible) Friends.Add(row);
-        }
+        Friends.Synchronize(visible);
         EmptyTitle = IsLocalOnly ? "Ești în modul Doar local" : !IsConnected ? "Aproape de prietenii tăi"
-            : !steam.FriendsReady ? "Se încarcă prietenii…" : roster.Count == 0 ? "Lista ta de prieteni este goală" : "Niciun prieten găsit";
+            : !steam.FriendsReady ? LoadExpired ? "Steam răspunde mai greu" : "Se încarcă prietenii…" : roster.Count == 0 ? "Lista ta de prieteni este goală" : "Niciun prieten găsit";
         EmptyMessage = IsLocalOnly ? "Alege alt mod de vizibilitate din Acasă pentru a vedea prietenii."
             : !IsConnected ? "Conectează Steam pentru statusuri, jocuri și profiluri live."
-            : !steam.FriendsReady ? "Așteptăm lista și activitatea de la Steam."
+            : !steam.FriendsReady ? LoadExpired ? "Reîncearcă încărcarea sau verifică conexiunea la internet." : "Lista apare imediat ce Steam trimite primele date."
             : roster.Count == 0 ? "Prietenii adăugați pe Steam vor apărea aici." : "Încearcă alt nume, joc sau filtru.";
         OnPropertyChanged(nameof(ShowConnect));
         OnPropertyChanged(nameof(IsWaiting));
+        OnPropertyChanged(nameof(CanRetryLoad));
         OnPropertyChanged(nameof(HasFriends));
         _ = LoadVisibleAvatarsAsync(firstVisible, lastVisible);
+        // Fill the rest of the roster during the same bounded visit, after visible rows are queued.
+        if (imageWindow is { IsCancellationRequested: false })
+            _ = WarmAvatarsAsync(imageWindow.Token);
+    }
+
+    private async Task WarmAvatarsAsync(CancellationToken token)
+    {
+        if (warmingAvatars && warmingToken == token) return;
+        warmingAvatars = true;
+        warmingToken = token;
+        try
+        {
+            while (active && !token.IsCancellationRequested)
+            {
+                // Small waves leave room for newly visible rows and an opened friend's artwork.
+                var next = rows.Values.Where(x => x.CanLoadAvatar).Take(SteamImageCache.MaximumConcurrentDownloads).ToArray();
+                if (next.Length == 0) break;
+                await Task.WhenAll(next.Select(x => x.LoadAvatarAsync(images, token)));
+            }
+        }
+        finally { if (warmingToken == token) warmingAvatars = false; }
+    }
+
+    private void StartLoadWindow()
+    {
+        if (!active || viewLifetime is null) return;
+        loadWindow?.Cancel(); loadWindow?.Dispose();
+        loadWindow = CancellationTokenSource.CreateLinkedTokenSource(viewLifetime.Token);
+        imageWindow?.Cancel(); imageWindow?.Dispose();
+        imageWindow = CancellationTokenSource.CreateLinkedTokenSource(viewLifetime.Token);
+        imageWindow.CancelAfter(FriendLoadProgress.LoadBudget);
+        LoadExpired = false;
+        _ = FinishLoadWindowAsync(loadWindow.Token);
+    }
+
+    private async Task FinishLoadWindowAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(8), token);
+            if (active && !token.IsCancellationRequested && IsWaiting) steam.RefreshFriendDetails();
+            await Task.Delay(FriendLoadProgress.LoadBudget - TimeSpan.FromSeconds(8), token);
+            if (!active || token.IsCancellationRequested) return;
+            LoadExpired = true;
+            RenderRoster();
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    [RelayCommand] private void RetryLoad()
+    {
+        if (!active || !IsConnected) return;
+        foreach (var row in rows.Values) row.AllowAvatarRetry();
+        StartLoadWindow();
+        steam.RefreshFriendDetails();
+        RenderRoster();
     }
 
     public async Task LoadVisibleAvatarsAsync(int first, int last)
     {
+        var moved = firstVisible != Math.Max(0, first) || lastVisible != Math.Max(Math.Max(0, first), last);
         firstVisible = Math.Max(0, first);
         lastVisible = Math.Max(firstVisible, last);
         if (!active || viewLifetime is null) return;
-        var token = viewLifetime.Token;
+        if (moved && imageWindow is { IsCancellationRequested: true })
+        {
+            imageWindow.Dispose();
+            imageWindow = CancellationTokenSource.CreateLinkedTokenSource(viewLifetime.Token);
+            imageWindow.CancelAfter(FriendLoadProgress.LoadBudget);
+        }
+        var token = imageWindow?.Token ?? viewLifetime.Token;
         var visible = Friends.Skip(firstVisible).Take(Math.Min(30, lastVisible - firstVisible + 1)).ToArray();
         await Task.WhenAll(visible.Select(x => x.LoadAvatarAsync(images, token)));
     }
@@ -252,13 +337,18 @@ public partial class FriendRowViewModel(SteamFriend friend) : ObservableObject
     [ObservableProperty] private string? avatar;
     [ObservableProperty] private string section = "";
     private bool loading;
+    private Task? avatarLoad;
     private string? attemptedHash;
+    private DateTime retryAfter;
     public bool HasAvatar => Avatar is not null;
     public bool HasSection => Section.Length > 0;
     public bool HasSecondaryActivity => Friend.SecondaryActivity.Length > 0;
     public bool HasStoreGame => Friend.IsPlaying && Friend.AppId > 0;
+    public bool CanLoadAvatar => !loading && !HasAvatar && Friend.AvatarHash is not null &&
+        (attemptedHash != Friend.AvatarHash || DateTime.UtcNow >= retryAfter);
     public void Update(SteamFriend value)
     {
+        if (Friend == value) return;
         if (Friend.AvatarHash != value.AvatarHash) Avatar = null;
         Friend = value;
         OnPropertyChanged(nameof(HasSecondaryActivity));
@@ -266,12 +356,22 @@ public partial class FriendRowViewModel(SteamFriend friend) : ObservableObject
     }
     partial void OnAvatarChanged(string? value) => OnPropertyChanged(nameof(HasAvatar));
     partial void OnSectionChanged(string value) => OnPropertyChanged(nameof(HasSection));
+    public void AllowAvatarRetry() { attemptedHash = null; retryAfter = default; }
     public async Task LoadAvatarAsync(SteamImageCache images, CancellationToken token)
     {
-        if (loading || HasAvatar || Friend.AvatarHash is null || attemptedHash == Friend.AvatarHash) return;
+        if (token.IsCancellationRequested) return;
+        if (avatarLoad is { IsCompleted: false } pending) await pending;
+        if (token.IsCancellationRequested || !CanLoadAvatar) return;
+        avatarLoad = DownloadAvatarAsync(images, token);
+        await avatarLoad;
+    }
+
+    private async Task DownloadAvatarAsync(SteamImageCache images, CancellationToken token)
+    {
         loading = true;
         var hash = Friend.AvatarHash;
         attemptedHash = hash;
+        retryAfter = DateTime.UtcNow.AddSeconds(30);
         try
         {
             var path = await images.GetAvatarAsync(hash, token);

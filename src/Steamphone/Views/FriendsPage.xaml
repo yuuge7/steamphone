@@ -4,14 +4,14 @@
              xmlns:vm="clr-namespace:Steamphone.ViewModels"
              x:Class="Steamphone.Views.FriendsPage" x:DataType="vm:FriendsViewModel" Title="Prieteni">
   <Grid>
-    <Grid x:Name="RosterLayout" Padding="24,20,24,0" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="14" MaximumWidthRequest="720" HorizontalOptions="Fill">
-      <VerticalStackLayout x:Name="RosterHeading" Spacing="16">
+    <Grid x:Name="RosterLayout" Padding="24,20,24,0" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="12" MaximumWidthRequest="720" HorizontalOptions="Fill">
+      <VerticalStackLayout x:Name="RosterHeading" Spacing="14">
         <Grid ColumnDefinitions="*,Auto">
           <VerticalStackLayout Spacing="3">
-            <Label x:Name="CommunityEyebrow" Text="STEAM COMMUNITY" Style="{StaticResource Eyebrow}" />
+            <Label x:Name="CommunityEyebrow" Text="COMUNITATEA TA" Style="{StaticResource Eyebrow}" />
             <Label Text="Prieteni" Style="{StaticResource Title}" />
           </VerticalStackLayout>
-          <Border Grid.Column="1" Style="{StaticResource Card}" Padding="12,7" VerticalOptions="Center" StrokeShape="RoundRectangle 20">
+          <Border Grid.Column="1" Style="{StaticResource StatusBadge}" VerticalOptions="Center">
             <HorizontalStackLayout Spacing="6">
               <Ellipse Fill="#879BAC" WidthRequest="6" HeightRequest="6" VerticalOptions="Center">
                 <Ellipse.Triggers><DataTrigger TargetType="Ellipse" Binding="{Binding IsConnected}" Value="True"><Setter Property="Fill" Value="#56CFB1" /></DataTrigger></Ellipse.Triggers>
@@ -21,18 +21,19 @@
           </Border>
         </Grid>
         <Label x:Name="CompactSummary" Text="{Binding CountsSummary}" Style="{StaticResource Caption}" IsVisible="False" />
-        <Grid x:Name="StatsStrip" ColumnDefinitions="*,1,*,1,*" ColumnSpacing="16" Padding="0,4,0,8">
-          <VerticalStackLayout Spacing="2"><Label Text="{Binding PlayingCount}" FontFamily="Display" FontSize="30" TextColor="{AppThemeBinding Light=#4D6C21, Dark=#B6DA7A}" /><Label Text="în joc" Style="{StaticResource Caption}" /></VerticalStackLayout>
-          <BoxView Grid.Column="1" Style="{StaticResource Divider}" WidthRequest="1" HeightRequest="34" VerticalOptions="Center" />
-          <VerticalStackLayout Grid.Column="2" Spacing="2"><Label Text="{Binding OnlineCount}" FontFamily="Display" FontSize="30" TextColor="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" /><Label Text="online" Style="{StaticResource Caption}" /></VerticalStackLayout>
-          <BoxView Grid.Column="3" Style="{StaticResource Divider}" WidthRequest="1" HeightRequest="34" VerticalOptions="Center" />
-          <VerticalStackLayout Grid.Column="4" Spacing="2"><Label Text="{Binding FriendCount}" FontFamily="Display" FontSize="30" /><Label Text="prieteni" Style="{StaticResource Caption}" /></VerticalStackLayout>
-        </Grid>
+        <Border x:Name="StatsStrip" Style="{StaticResource Card}" Padding="14,12">
+          <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+            <HorizontalStackLayout Spacing="6"><Ellipse Fill="{AppThemeBinding Light=#608732, Dark=#B6DA7A}" WidthRequest="6" HeightRequest="6" VerticalOptions="Center" /><Label Text="{Binding PlayingCount}" FontFamily="BarlowSemiBold" /><Label Text="în joc" Style="{StaticResource Caption}" VerticalOptions="Center" /></HorizontalStackLayout>
+            <HorizontalStackLayout Grid.Column="1" Spacing="6" HorizontalOptions="Center"><Ellipse Fill="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" WidthRequest="6" HeightRequest="6" VerticalOptions="Center" /><Label Text="{Binding OnlineCount}" FontFamily="BarlowSemiBold" /><Label Text="online" Style="{StaticResource Caption}" VerticalOptions="Center" /></HorizontalStackLayout>
+            <HorizontalStackLayout Grid.Column="2" Spacing="5" HorizontalOptions="End"><Label Text="{Binding FriendCount}" FontFamily="BarlowSemiBold" /><Label Text="prieteni" Style="{StaticResource Caption}" VerticalOptions="Center" /></HorizontalStackLayout>
+          </Grid>
+        </Border>
       </VerticalStackLayout>
       <Border Grid.Row="1" Style="{StaticResource Input}" Padding="0">
         <SearchBar Placeholder="Caută un prieten sau un joc" Text="{Binding Search}" SemanticProperties.Description="Caută prieteni după nume sau joc" />
       </Border>
-      <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" ColumnSpacing="4">
+      <Border Grid.Row="2" Style="{StaticResource SegmentedControl}">
+      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="3">
         <Button Text="Toți" Style="{StaticResource Filter}" Command="{Binding SelectFilterCommand}" CommandParameter="Toți">
           <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding Filter}" Value="Toți"><Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#DCEBF2, Dark=#253C4D}" /><Setter Property="TextColor" Value="{AppThemeBinding Light=#166D91, Dark=#9DDCF3}" /></DataTrigger></Button.Triggers>
         </Button>
@@ -46,10 +47,17 @@
           <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding Filter}" Value="Offline"><Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#E0E7EC, Dark=#2A3947}" /><Setter Property="TextColor" Value="{AppThemeBinding Light=#162637, Dark=#EFF4F8}" /></DataTrigger></Button.Triggers>
         </Button>
       </Grid>
-      <CollectionView x:Name="Roster" Grid.Row="3" ItemsSource="{Binding Friends}" SelectionMode="None" Scrolled="OnRosterScrolled">
+      </Border>
+      <VerticalStackLayout Grid.Row="3" Spacing="6">
+        <Grid ColumnDefinitions="*,48" ColumnSpacing="8">
+          <Label Text="{Binding LoadMessage}" Style="{StaticResource Caption}" VerticalOptions="Center" MaxLines="2" SemanticProperties.Description="{Binding LoadMessage}" />
+          <Button Grid.Column="1" Text="↻" FontSize="24" Style="{StaticResource Quiet}" Padding="0" Command="{Binding RetryLoadCommand}" IsVisible="{Binding CanRetryLoad}" SemanticProperties.Description="Reîncarcă prietenii și detaliile lipsă" />
+        </Grid>
+        <ProgressBar Progress="{Binding LoadFraction}" IsVisible="{Binding IsWaiting}" ProgressColor="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" BackgroundColor="{AppThemeBinding Light=#DCE5EB, Dark=#263746}" HeightRequest="3" />
+      </VerticalStackLayout>
+      <CollectionView x:Name="Roster" Grid.Row="4" ItemsSource="{Binding Friends}" SelectionMode="None" Scrolled="OnRosterScrolled" ItemSizingStrategy="MeasureAllItems">
         <CollectionView.Header>
           <VerticalStackLayout Spacing="8">
-            <Label Text="{Binding ConnectionMessage}" Style="{StaticResource Caption}" MaxLines="2" />
             <Button Text="Conectează Steam" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
             <Button Text="Schimbă modul din Acasă" Command="{Binding GoHomeCommand}" IsVisible="{Binding IsLocalOnly}" Style="{StaticResource Secondary}" />
             <Label Style="{StaticResource Error}" />
@@ -66,9 +74,9 @@
         <CollectionView.ItemTemplate>
           <DataTemplate x:DataType="vm:FriendRowViewModel">
             <VerticalStackLayout Spacing="0">
-              <Label Text="{Binding Section}" Style="{StaticResource Eyebrow}" IsVisible="{Binding HasSection}" Margin="0,22,0,10" FontSize="10" />
-              <Grid ColumnDefinitions="52,*,48" ColumnSpacing="12" Padding="0,12" MinimumHeightRequest="82">
-                <Border Stroke="{AppThemeBinding Light=#C2D0DC, Dark=#425568}" StrokeThickness="1.5" StrokeShape="RoundRectangle 14" HeightRequest="52" WidthRequest="52" Padding="3" VerticalOptions="Start">
+              <Label Text="{Binding Section}" Style="{StaticResource Eyebrow}" IsVisible="{Binding HasSection}" Margin="0,14,0,8" FontSize="10" />
+              <Grid ColumnDefinitions="48,*,48" ColumnSpacing="12" Padding="0,11" MinimumHeightRequest="76">
+                <Border Stroke="{AppThemeBinding Light=#C2D0DC, Dark=#425568}" StrokeThickness="1.5" StrokeShape="RoundRectangle 12" HeightRequest="48" WidthRequest="48" Padding="2" VerticalOptions="Center">
                   <Border.Triggers>
                     <DataTrigger TargetType="Border" Binding="{Binding Friend.IsOnline}" Value="True"><Setter Property="Stroke" Value="{AppThemeBinding Light=#166D91, Dark=#73C7E8}" /></DataTrigger>
                     <DataTrigger TargetType="Border" Binding="{Binding Friend.IsPlaying}" Value="True"><Setter Property="Stroke" Value="{AppThemeBinding Light=#608732, Dark=#B6DA7A}" /></DataTrigger>
@@ -94,16 +102,18 @@
                         Command="{Binding OpenFriendCommand, Source={RelativeSource AncestorType={x:Type vm:FriendsViewModel}}, x:DataType=vm:FriendsViewModel}" CommandParameter="{Binding .}" SemanticProperties.Description="{Binding Friend.Name, StringFormat='Vezi activitatea și profilul lui {0}'}" />
                 <Grid.GestureRecognizers><TapGestureRecognizer Command="{Binding OpenFriendCommand, Source={RelativeSource AncestorType={x:Type vm:FriendsViewModel}}, x:DataType=vm:FriendsViewModel}" CommandParameter="{Binding .}" /></Grid.GestureRecognizers>
               </Grid>
-              <BoxView Style="{StaticResource Divider}" Margin="64,0,0,0" />
+              <BoxView Style="{StaticResource Divider}" Margin="60,0,0,0" />
             </VerticalStackLayout>
           </DataTemplate>
         </CollectionView.ItemTemplate>
       </CollectionView>
-      <Grid Grid.Row="4" ColumnDefinitions="*,*,*" ColumnSpacing="4" Padding="0,4">
+      <Border Grid.Row="5" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#E9EFF3, Dark=#17232F}" StrokeShape="RoundRectangle 12,12,0,0" Padding="4,0">
+      <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
         <Button Text="Magazin ↗" Command="{Binding OpenStoreCommand}" Style="{StaticResource Quiet}" FontSize="12" Padding="4,10" />
         <Button Grid.Column="1" Text="Jocurile mele ↗" Command="{Binding OpenLibraryCommand}" Style="{StaticResource Quiet}" FontSize="12" Padding="4,10" />
         <Button Grid.Column="2" Text="Profilul meu ↗" Command="{Binding OpenProfileCommand}" Style="{StaticResource Quiet}" FontSize="12" Padding="4,10" />
       </Grid>
+      </Border>
     </Grid>
 
     <Grid IsVisible="{Binding HasSelectedFriend}" RowDefinitions="48,*" BackgroundColor="#AA070C12" ZIndex="10">

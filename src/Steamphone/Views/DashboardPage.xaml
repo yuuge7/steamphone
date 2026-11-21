@@ -5,37 +5,37 @@
              xmlns:core="clr-namespace:Steamphone.Core;assembly=Steamphone.Core"
              x:Class="Steamphone.Views.DashboardPage" x:DataType="vm:DashboardViewModel" Title="Steamphone">
   <ScrollView>
-    <VerticalStackLayout Padding="24,20,24,32" Spacing="24" MaximumWidthRequest="720" HorizontalOptions="Fill">
+    <VerticalStackLayout Padding="24,20,24,32" Spacing="20" MaximumWidthRequest="720" HorizontalOptions="Fill">
       <Grid ColumnDefinitions="*,48" ColumnSpacing="12">
-        <VerticalStackLayout Spacing="4">
-          <Label Text="STEAMPHONE" FontFamily="Display" FontSize="24" CharacterSpacing="2" />
-          <Label Text="{Binding AccountName}" Style="{StaticResource Caption}" MaxLines="1" LineBreakMode="TailTruncation" />
-        </VerticalStackLayout>
-        <Button Grid.Column="1" Text="⚙" FontSize="25" Style="{StaticResource Quiet}" Padding="0" Command="{Binding OpenSettingsCommand}" SemanticProperties.Description="Deschide setările" />
+        <Grid ColumnDefinitions="32,*" ColumnSpacing="10">
+          <Image Source="brand_mark.png" HeightRequest="28" WidthRequest="28" VerticalOptions="Center" />
+          <VerticalStackLayout Grid.Column="1" Spacing="2"><Label Text="STEAMPHONE" FontFamily="Display" FontSize="21" CharacterSpacing="1.5" /><Label Text="{Binding AccountName}" Style="{StaticResource Caption}" MaxLines="1" LineBreakMode="TailTruncation" /></VerticalStackLayout>
+        </Grid>
+        <Button Grid.Column="1" ImageSource="settings.png" Style="{StaticResource Quiet}" Padding="12" Command="{Binding OpenSettingsCommand}" SemanticProperties.Description="Deschide setările" />
       </Grid>
       <VerticalStackLayout Spacing="6">
         <Label Text="Activitatea ta" Style="{StaticResource Title}" />
-        <Label Text="De pe telefon, în lumea Steam." Style="{StaticResource Subtitle}" />
+        <Label Text="Jocul și prezența ta pe Steam." Style="{StaticResource Subtitle}" />
       </VerticalStackLayout>
 
-      <Border Stroke="#354B5C" StrokeShape="RoundRectangle 20" Padding="0" BackgroundColor="#192A38">
+      <Border Stroke="#354B5C" StrokeShape="RoundRectangle 16" Padding="0" BackgroundColor="#192A38">
         <Grid ColumnDefinitions="3,*">
           <BoxView Color="#73C7E8" Margin="0,24,0,24">
             <BoxView.Triggers><DataTrigger TargetType="BoxView" Binding="{Binding IsRunning}" Value="True"><Setter Property="Color" Value="#B6DA7A" /></DataTrigger></BoxView.Triggers>
           </BoxView>
-          <VerticalStackLayout Grid.Column="1" Spacing="18" Padding="21,22,24,24">
+          <VerticalStackLayout Grid.Column="1" Spacing="14" Padding="21,20,20,20">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
               <Label Text="ACUM PE TELEFON" FontFamily="BarlowSemiBold" TextColor="#92B3C6" CharacterSpacing="1.5" FontSize="10" VerticalOptions="Center" />
               <HorizontalStackLayout Grid.Column="1" Spacing="6">
                 <Ellipse Fill="#879BAC" WidthRequest="6" HeightRequest="6" VerticalOptions="Center"><Ellipse.Triggers><DataTrigger TargetType="Ellipse" Binding="{Binding IsConnected}" Value="True"><Setter Property="Fill" Value="#56CFB1" /></DataTrigger></Ellipse.Triggers></Ellipse>
-                <Label Text="STEAM" FontFamily="Mono" TextColor="#BBCBD7" FontSize="10" />
+                <Label Text="{Binding ConnectionLabel}" FontFamily="BarlowSemiBold" TextColor="#BBCBD7" FontSize="10" />
               </HorizontalStackLayout>
             </Grid>
-            <Label Text="{Binding CurrentGame}" TextColor="#F2F7FA" FontFamily="Display" FontSize="32" LineBreakMode="WordWrap" />
+            <Label Text="{Binding CurrentGame}" TextColor="#F2F7FA" FontFamily="Display" FontSize="28" LineBreakMode="WordWrap" />
             <Label Text="{Binding MonitorMessage}" TextColor="#A5B8C8" FontSize="13" />
             <BoxView Color="#354B5C" HeightRequest="1" />
             <VerticalStackLayout Spacing="6">
-              <Label Text="PREZENȚA TA PE STEAM" TextColor="#92B3C6" FontFamily="BarlowSemiBold" FontSize="10" CharacterSpacing="1.5" />
+              <Label Text="{Binding ModeLabel}" TextColor="#92B3C6" FontFamily="BarlowSemiBold" FontSize="10" CharacterSpacing="1.5" />
               <Label Text="{Binding PresencePreview}" TextColor="#B8E5F4" FontFamily="BarlowMedium" FontSize="16" />
               <Label Text="{Binding ConnectionMessage}" TextColor="#A5B8C8" FontSize="12" />
             </VerticalStackLayout>
@@ -56,7 +56,7 @@
       <VerticalStackLayout Spacing="14">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
           <Label Text="Vizibilitate" Style="{StaticResource SectionTitle}" />
-          <Label Grid.Column="1" Text="Se salvează automat" Style="{StaticResource Caption}" VerticalOptions="Center" />
+          <HorizontalStackLayout Grid.Column="1" Spacing="5" VerticalOptions="Center"><Label Text="✓" TextColor="{AppThemeBinding Light=#3C765B, Dark=#79D4B3}" /><Label Text="Salvare automată" Style="{StaticResource Caption}" VerticalOptions="Center" /></HorizontalStackLayout>
         </Grid>
         <Border Style="{StaticResource Card}" Padding="0" IsEnabled="{Binding PrivacySaving, Converter={StaticResource Not}}">
           <VerticalStackLayout Spacing="0" RadioButtonGroup.GroupName="Visibility" RadioButtonGroup.SelectedValue="{Binding SelectedVisibility}">

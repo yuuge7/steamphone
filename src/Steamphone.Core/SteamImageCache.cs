@@ -5,13 +5,15 @@ public sealed class SteamImageCache(HttpClient http, string directory)
 {
     public const long MaximumCacheBytes = 16 * 1024 * 1024;
     public const int MaximumImageBytes = 512 * 1024;
-    private readonly SemaphoreSlim slots = new(2, 2);
+    public const int MaximumConcurrentDownloads = 4;
+    public static readonly TimeSpan DownloadTimeout = TimeSpan.FromSeconds(5);
+    private readonly SemaphoreSlim slots = new(MaximumConcurrentDownloads, MaximumConcurrentDownloads);
 
     public Task<string?> GetAvatarAsync(string? hash, CancellationToken cancellation)
     {
         if (hash is not { Length: 40 } || !hash.All(Uri.IsHexDigit)) return Task.FromResult<string?>(null);
         hash = hash.ToLowerInvariant();
-        return GetAsync($"avatar-full-{hash}", $"https://avatars.steamstatic.com/{hash}_full.jpg", cancellation);
+        return GetAsync($"avatar-medium-{hash}", $"https://avatars.steamstatic.com/{hash}_medium.jpg", cancellation);
     }
 
     public Task<string?> GetGameHeaderAsync(uint appId, CancellationToken cancellation) => appId == 0
@@ -21,16 +23,18 @@ public sealed class SteamImageCache(HttpClient http, string directory)
     private async Task<string?> GetAsync(string key, string url, CancellationToken cancellation)
     {
         cancellation.ThrowIfCancellationRequested();
+        var path = Path.Combine(directory, key + ".jpg");
+        // Disk hits must never queue behind a slow network request.
+        if (IsFresh(path)) return path;
         await slots.WaitAsync(cancellation);
         string? temporary = null;
         try
         {
             cancellation.ThrowIfCancellationRequested();
             Directory.CreateDirectory(directory);
-            var path = Path.Combine(directory, key + ".jpg");
-            if (File.Exists(path) && DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < TimeSpan.FromDays(7)) return path;
+            if (IsFresh(path)) return path;
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
-            timeout.CancelAfter(TimeSpan.FromSeconds(15));
+            timeout.CancelAfter(DownloadTimeout);
             using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
             if (!response.IsSuccessStatusCode) return null;
             if (response.Content.Headers.ContentLength > MaximumImageBytes) return null;
@@ -55,12 +59,19 @@ public sealed class SteamImageCache(HttpClient http, string directory)
             Trim(path);
             return path;
         }
+        catch (OperationCanceledException) when (!cancellation.IsCancellationRequested)
+        {
+            return File.Exists(path) ? path : null;
+        }
+        catch (HttpRequestException) when (File.Exists(path)) { return path; }
         finally
         {
             if (temporary is not null && File.Exists(temporary)) File.Delete(temporary);
             slots.Release();
         }
     }
+
+    private static bool IsFresh(string path) => File.Exists(path) && DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < TimeSpan.FromDays(7);
 
     private void Trim(string current)
     {

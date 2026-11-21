@@ -84,7 +84,7 @@ public sealed class SteamImageCacheTests : IDisposable
         using var http = new HttpClient(new Handler((request, _) =>
         {
             calls++;
-            Assert.Equal($"https://avatars.steamstatic.com/{Hash}_full.jpg", request.RequestUri!.ToString());
+            Assert.Equal($"https://avatars.steamstatic.com/{Hash}_medium.jpg", request.RequestUri!.ToString());
             return Task.FromResult(Jpeg([1, 2, 3]));
         }));
         var cache = new SteamImageCache(http, directory);
@@ -148,7 +148,7 @@ public sealed class SteamImageCacheTests : IDisposable
     }
 
     [Fact]
-    public async Task SocialMediaDownloadsAreLimitedToTwoConcurrentRequests()
+    public async Task SocialMediaDownloadsAreLimitedToFourConcurrentRequests()
     {
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var count = 0;
@@ -157,7 +157,7 @@ public sealed class SteamImageCacheTests : IDisposable
         {
             var current = Interlocked.Increment(ref count);
             Interlocked.Exchange(ref peak, Math.Max(peak, current));
-            if (current == 2) started.TrySetResult();
+            if (current == SteamImageCache.MaximumConcurrentDownloads) started.TrySetResult();
             try { await Task.Delay(Timeout.InfiniteTimeSpan, token); }
             finally { Interlocked.Decrement(ref count); }
             return Jpeg([1]);
@@ -168,7 +168,62 @@ public sealed class SteamImageCacheTests : IDisposable
         await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
         visible.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Task.WhenAll(downloads));
-        Assert.Equal(2, peak);
+        Assert.Equal(SteamImageCache.MaximumConcurrentDownloads, peak);
+    }
+
+    [Fact]
+    public async Task CachedAvatarsDoNotWaitBehindStalledDownloads()
+    {
+        var count = 0;
+        var saturated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var http = new HttpClient(new Handler(async (request, token) =>
+        {
+            if (request.RequestUri!.Host == "avatars.steamstatic.com") return Jpeg([1, 2, 3]);
+            if (Interlocked.Increment(ref count) == SteamImageCache.MaximumConcurrentDownloads) saturated.SetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            return Jpeg([1]);
+        }));
+        var cache = new SteamImageCache(http, directory);
+        var cached = await cache.GetAvatarAsync(Hash, CancellationToken.None);
+        using var visit = new CancellationTokenSource();
+        var stalled = Enumerable.Range(1, 12).Select(x => cache.GetGameHeaderAsync((uint)x, visit.Token)).ToArray();
+        try
+        {
+            await saturated.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.Equal(cached, await cache.GetAvatarAsync(Hash, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(1)));
+        }
+        finally
+        {
+            visit.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Task.WhenAll(stalled));
+        }
+    }
+
+    [Fact]
+    public async Task TwelveStalledVisibleImagesFinishWithinTheInitialLoadBudget()
+    {
+        using var http = new HttpClient(new Handler(async (_, token) =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            return Jpeg([1]);
+        }));
+        var cache = new SteamImageCache(http, directory);
+        using var visit = new CancellationTokenSource(FriendLoadProgress.LoadBudget);
+        var results = await Task.WhenAll(Enumerable.Range(1, 12)
+            .Select(x => cache.GetGameHeaderAsync((uint)x, visit.Token)));
+        Assert.All(results, result => Assert.Null(result));
+        Assert.Empty(Directory.EnumerateFiles(directory));
+    }
+
+    [Fact]
+    public async Task FailedRefreshCanStillDisplayAnExpiredCachedImage()
+    {
+        using var http = new HttpClient(new Handler((_, _) => Task.FromResult(Jpeg([1, 2, 3]))));
+        var cache = new SteamImageCache(http, directory);
+        var path = (await cache.GetAvatarAsync(Hash, CancellationToken.None))!;
+        File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddDays(-8));
+        using var offline = new HttpClient(new Handler((_, _) => throw new HttpRequestException("offline")));
+        Assert.Equal(path, await new SteamImageCache(offline, directory).GetAvatarAsync(Hash, CancellationToken.None));
     }
 
     private static HttpResponseMessage Jpeg(byte[] data)

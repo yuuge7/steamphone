@@ -21,6 +21,7 @@ public sealed class SteamConnection : IAsyncDisposable
     private readonly Func<Task<AppSettings>>? loadSettings;
     private readonly object friendSync = new();
     private readonly Dictionary<ulong, SteamFriend> roster = [];
+    private readonly FriendLoadProgress friendProgress = new();
     private readonly SemaphoreSlim operation = new(1, 1);
     private readonly object sync = new();
     private readonly CancellationTokenSource lifetime = new();
@@ -43,6 +44,7 @@ public sealed class SteamConnection : IAsyncDisposable
     public event Action<SteamState>? Changed;
     public event Action? FriendsChanged;
     public bool FriendsReady { get; private set; }
+    public int FriendsLoadedCount { get { lock (friendSync) return roster.Keys.Count(friendProgress.IsLoaded); } }
     public IReadOnlyList<SteamFriend> GetFriendsSnapshot()
     {
         lock (friendSync) return roster.Values.OrderByDescending(x => x.IsPlaying)
@@ -60,8 +62,7 @@ public sealed class SteamConnection : IAsyncDisposable
         var configuration = SteamConfiguration.Create(builder => builder
             .WithProtocolTypes(ProtocolTypes.Tcp)
             .WithConnectionTimeout(TimeSpan.FromSeconds(20))
-            .WithDefaultPersonaStateFlags(EClientPersonaStateFlag.PlayerName | EClientPersonaStateFlag.Presence |
-                EClientPersonaStateFlag.GameExtraInfo)
+            .WithDefaultPersonaStateFlags(FriendLoadProgress.RequiredFields | EClientPersonaStateFlag.GameDataBlob)
             .WithMachineInfoProvider(new InstallationMachineInfo(installationId)));
         client = new SteamClient(configuration);
         client.AddHandler(new SteamRichPresenceHandler());
@@ -73,7 +74,7 @@ public sealed class SteamConnection : IAsyncDisposable
         subscriptions.Add(callbacks.Subscribe<SteamClient.DisconnectedCallback>(_ =>
         {
             lock (sync) { presence.Reset(); playingBlocked = true; transportStarted = false; }
-            lock (friendSync) { roster.Clear(); FriendsReady = false; detailsRequestedUtc = default; }
+            lock (friendSync) { roster.Clear(); friendProgress.Clear(); FriendsReady = false; detailsRequestedUtc = default; }
             FriendsChanged?.Invoke();
             connected?.TrySetException(new IOException("Conexiunea Steam s-a închis."));
             loggedOn?.TrySetException(new IOException("Conexiunea Steam s-a închis."));
@@ -82,7 +83,7 @@ public sealed class SteamConnection : IAsyncDisposable
                 Publish(new(ConnectionPhase.Disconnected, "Conexiune pierdută. Se va reîncerca.", State.Username));
         }));
         subscriptions.Add(callbacks.Subscribe<SteamUser.LoggedOnCallback>(result => loggedOn?.TrySetResult(result.Result)));
-        subscriptions.Add(callbacks.Subscribe<SteamFriends.FriendsListCallback>(_ =>
+        subscriptions.Add(callbacks.Subscribe<SteamFriends.FriendsListCallback>(value =>
         {
             lock (friendSync)
             {
@@ -90,7 +91,10 @@ public sealed class SteamConnection : IAsyncDisposable
                 for (var i = 0; i < friends.GetFriendCount(); i++) UpdateFriend(friends.GetFriendByIndex(i));
                 for (var i = 0; i < friends.GetFriendCount(); i++) removed.Remove(friends.GetFriendByIndex(i).ConvertToUInt64());
                 foreach (var id in removed) roster.Remove(id);
+                friendProgress.Retain(roster.Keys.ToHashSet());
                 FriendsReady = true;
+                // SteamKit sends the initial persona request before this callback. Do not duplicate it.
+                if (!value.Incremental) detailsRequestedUtc = DateTime.UtcNow;
             }
             RequestVisibleFriendDetails();
             FriendsChanged?.Invoke();
@@ -101,6 +105,7 @@ public sealed class SteamConnection : IAsyncDisposable
             {
                 UpdateFriend(value.FriendID);
                 var id = value.FriendID.ConvertToUInt64();
+                friendProgress.Receive(id, value.StatusFlags);
                 if (roster.TryGetValue(id, out var friend))
                 {
                     friend = friend.MergeDetails(value.StatusFlags, value.StateFlags, value.LastLogOff);
@@ -172,7 +177,8 @@ public sealed class SteamConnection : IAsyncDisposable
         var key = id.ConvertToUInt64();
         roster.TryGetValue(key, out var previous);
         var appId = previous?.AppId ?? friends.GetFriendGamePlayed(id).AppID;
-        roster[key] = new(key, friends.GetFriendPersonaName(id) ?? "Prieten Steam",
+        var name = friends.GetFriendPersonaName(id);
+        roster[key] = new(key, string.IsNullOrWhiteSpace(name) ? "Prieten Steam" : name,
             friends.GetFriendPersonaState(id), appId, previous?.GameName ?? friends.GetFriendGamePlayedName(id))
         {
             AvatarHash = SteamFriend.NormalizeAvatarHash(friends.GetFriendAvatar(id)),
@@ -188,17 +194,20 @@ public sealed class SteamConnection : IAsyncDisposable
         if (active) RequestVisibleFriendDetails();
     }
 
-    private void RequestVisibleFriendDetails()
+    public void RefreshFriendDetails() => RequestVisibleFriendDetails(retryMissing: true);
+
+    private void RequestVisibleFriendDetails(bool retryMissing = false)
     {
         lock (friendSync)
         {
             if (!friendsViewActive || !client.IsConnected || !FriendsReady ||
-                DateTime.UtcNow - detailsRequestedUtc < TimeSpan.FromMinutes(2)) return;
+                DateTime.UtcNow - detailsRequestedUtc < (retryMissing ? TimeSpan.FromSeconds(5) : TimeSpan.FromMinutes(2))) return;
             detailsRequestedUtc = DateTime.UtcNow;
-            foreach (var batch in roster.Keys.Chunk(100))
-                friends.RequestFriendInfo(batch.Select(x => new SteamID(x)), EClientPersonaStateFlag.PlayerName |
-                    EClientPersonaStateFlag.Presence | EClientPersonaStateFlag.LastSeen |
-                    EClientPersonaStateFlag.GameExtraInfo | EClientPersonaStateFlag.GameDataBlob);
+            var missing = roster.Keys.Where(x => !friendProgress.IsLoaded(x)).ToArray();
+            var ids = retryMissing && missing.Length > 0 ? missing : roster.Keys.ToArray();
+            foreach (var batch in ids.Chunk(100))
+                friends.RequestFriendInfo(batch.Select(x => new SteamID(x)),
+                    FriendLoadProgress.RequiredFields | EClientPersonaStateFlag.GameDataBlob);
         }
     }
 

@@ -17,6 +17,11 @@ public partial class FriendsPage : ContentPage
         updateTimer.IsRepeating = false;
         updateTimer.Tick += (_, _) => viewModel.FlushUpdates();
         viewModel.UpdatesPending += () => Dispatcher.Dispatch(() => { if (visible && !updateTimer.IsRunning) updateTimer.Start(); });
+        viewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName is nameof(FriendsViewModel.Search) or nameof(FriendsViewModel.Filter))
+                Dispatcher.Dispatch(() => { if (visible && viewModel.Friends.Count > 0) Roster.ScrollTo(0, animate: false); });
+        };
     }
     protected override async void OnAppearing()
     {
@@ -52,7 +57,7 @@ public partial class FriendsPage : ContentPage
     {
         base.OnSizeAllocated(width, height);
         if (StatsStrip is null) return;
-        var compact = height < 650;
+        var compact = height < 600;
         StatsStrip.IsVisible = !compact;
         CommunityEyebrow.IsVisible = !compact;
         CompactSummary.IsVisible = compact;

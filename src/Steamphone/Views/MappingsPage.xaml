@@ -8,7 +8,7 @@
     <VerticalStackLayout Spacing="5">
       <Label Text="ANDROID → STEAM" Style="{StaticResource Eyebrow}" />
       <Label Text="Jocurile tale" Style="{StaticResource Title}" />
-      <Label Text="O aplicație pe telefon. Un joc pe Steam." Style="{StaticResource Subtitle}" />
+      <Label Text="Alege ce joc afișezi când deschizi o aplicație." Style="{StaticResource Subtitle}" />
     </VerticalStackLayout>
     <Button Grid.Row="1" Text="Asociază o aplicație  +" Command="{Binding AddCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
     <VerticalStackLayout Grid.Row="2" Spacing="8">
@@ -19,7 +19,7 @@
       <CollectionView.EmptyView>
         <VerticalStackLayout Padding="0,32" Spacing="14">
           <Image Source="mapping_empty.png" WidthRequest="72" HeightRequest="72" HorizontalOptions="Start" />
-          <Label Text="Prima legătură începe aici" Style="{StaticResource SectionTitle}" />
+          <Label Text="Asociază primul joc" Style="{StaticResource SectionTitle}" />
           <Label Text="Alege o aplicație instalată și introdu AppID-ul jocului Steam pe care vrei să-l afișezi." Style="{StaticResource Subtitle}" />
           <Label Text="Găsești AppID-ul în adresa paginii jocului din magazinul Steam." Style="{StaticResource Caption}" />
         </VerticalStackLayout>
